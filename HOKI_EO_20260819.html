@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>氣味工程師 Sharon 嚴選 | HOKI 單方精油 5ml</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #fdfcf8; color: #333333; }
+        
+        /* Loading Overlay */
+        .loading-overlay { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(253, 252, 248, 0.95);
+            z-index: 99999; 
+            justify-content: center; 
+            align-items: center; 
+            flex-direction: column;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #fdfcf8; }
+        ::-webkit-scrollbar-thumb { background: #748069; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5c6653; }
+
+        /* Table Row Hover */
+        .product-row { transition: background-color 0.15s ease; }
+        .product-row:hover { background-color: rgba(116, 128, 105, 0.05); }
+    </style>
+</head>
+<body class="pb-40 relative">
+
+    <!-- Header -->
+    <header class="bg-[#748069] text-[#FFFFFF] py-10 text-center shadow-md relative overflow-hidden">
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-widest mb-3">氣味工程師 Sharon 嚴選</h1>
+        <p class="text-base sm:text-lg font-light tracking-wide opacity-90">HOKI｜單方精油 5ml</p>
+        <div class="mt-5 inline-block bg-[#f1cf71] text-[#748069] px-5 py-1.5 rounded-full text-sm font-bold shadow-sm">
+            全品項 9 折優惠中
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8 relative z-10">
+        <div id="product-list" class="space-y-12">
+            <!-- Categories will be injected here -->
+        </div>
+    </main>
+
+    <!-- Floating Cart Bottom Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-[#748069] text-[#FFFFFF] border-t-4 border-[#f1cf71] shadow-[0_-8px_15px_-3px_rgba(0,0,0,0.15)] p-4 z-40 flex">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 w-full">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-8 w-full md:w-auto text-sm md:text-base">
+                <div>
+                    <span class="opacity-80">已選數量：</span>
+                    <span id="total-qty" class="font-bold text-xl text-[#f1cf71]">0</span> 瓶
+                </div>
+                <div>
+                    <span class="opacity-80">小計：</span>
+                    <span class="font-bold text-lg">NT$ <span id="subtotal">0</span></span>
+                </div>
+                <div>
+                    <span class="opacity-80">運費：</span>
+                    <span class="font-bold text-[#f1cf71]" id="shipping-fee">NT$ 0</span>
+                    <span class="text-xs text-[#f1cf71] ml-1" id="free-shipping-diff">(滿 $2000 免運)</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 w-full md:w-auto justify-center md:justify-end">
+                <button onclick="clearCart()" class="text-[#f1cf71] hover:text-[#FFFFFF] text-sm underline mr-2 transition-colors">
+                    一鍵清除
+                </button>
+                <div class="text-xl font-bold mr-2 whitespace-nowrap">
+                    總計：<span class="text-[#f1cf71]">NT$ <span id="grand-total">0</span></span>
+                </div>
+                <button onclick="checkout()" class="bg-[#f1cf71] hover:bg-[#e0bc5a] text-[#748069] px-5 py-2.5 rounded-md shadow-lg font-bold transition-colors whitespace-nowrap">
+                    結帳並下載 PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading-overlay">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#748069] mb-4"></div>
+        <p class="text-[#748069] font-bold tracking-wide text-lg">正在為您生成訂單 PDF...</p>
+        <p class="text-[#748069] opacity-80 text-sm mt-2">請稍候，系統正在處理排版</p>
+    </div>
+
+    <!-- Checkout Info Modal -->
+    <div id="checkout-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex justify-center items-center px-4 backdrop-blur-sm">
+        <div class="bg-[#FFFFFF] rounded-xl p-8 max-w-md w-full text-center shadow-2xl border-t-4 border-[#748069]">
+            <h3 class="text-2xl font-bold text-[#748069] mb-2">填寫訂購資訊</h3>
+            <p class="text-gray-600 mb-6 text-sm text-left">為了方便為您核對訂單，請輸入您的姓名：</p>
+            
+            <div class="mb-6 text-left">
+                <label for="customer-name" class="block text-sm font-medium text-gray-700 mb-1">訂購人姓名 / 暱稱 <span class="text-red-500">*</span></label>
+                <input type="text" id="customer-name" placeholder="例如：王小明" class="w-full border border-gray-300 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#748069] focus:border-transparent transition-all">
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeCheckoutModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium py-3 rounded-md transition-colors">
+                    返回修改
+                </button>
+                <button onclick="proceedToPDF()" class="flex-1 bg-[#748069] hover:bg-[#5c6653] text-[#FFFFFF] font-bold py-3 rounded-md transition-colors shadow-sm">
+                    確認並下載
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for LINE Redirection -->
+    <div id="line-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex justify-center items-center px-4 backdrop-blur-sm">
+        <div class="bg-[#FFFFFF] rounded-xl p-8 max-w-md w-full text-center shadow-2xl border-t-4 border-[#748069]">
+            <div class="w-16 h-16 bg-[#748069]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-[#748069]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-2xl font-bold text-[#748069] mb-2">訂單 PDF 已下載！</h3>
+            <p class="text-gray-600 mb-6 text-left leading-relaxed">
+                請點擊下方按鈕前往我們的官方 LINE，並將您剛剛下載的 <strong>訂單 PDF 檔案</strong> 傳送給我們，以完成後續訂購流程。
+            </p>
+            <a href="https://lin.ee/vR6vIHO" target="_blank" class="block w-full bg-[#00B900] hover:bg-[#009900] text-white font-bold py-3 px-4 rounded-md transition-colors mb-3 shadow-sm">
+                前往官方 LINE
+            </a>
+            <button onclick="closeLineModal()" class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium py-3 px-4 rounded-md transition-colors">
+                關閉
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const rawData = [
+            { category: '果實種子 (Fruits & Seeds)', items: [
+                { name: '甜橙', en: 'Sweet Orange', sci: 'Citrus sinensis', price: 180 },
+                { name: '檸檬', en: 'Lemon', sci: 'Citrus limon', price: 180 },
+                { name: '橘子', en: 'Tangerine', sci: 'Citrus tangerina', price: 280 },
+                { name: 'FCR粉紅葡萄柚', en: 'Pink Grapefruit', sci: 'Citrus paradisi', price: 280 },
+                { name: '佛手柑', en: 'Bergamot', sci: 'Citrus bergamia', price: 480 },
+                { name: '芫荽籽', en: 'Coriander', sci: 'Coriandrum sativum', price: 580 },
+                { name: '山雞椒', en: 'Litsea Cubeba', sci: 'Litsea cubeba', price: 180 }
+            ]},
+            { category: '葉與全株 (Herbs)', items: [
+                { name: '真正薰衣草', en: 'Lavender', sci: 'Lavandula angustifolia', price: 280 },
+                { name: '苦橙葉帶花', en: 'Petitgrain', sci: 'Citrus aurantium', price: 380 },
+                { name: '白玉蘭葉', en: 'White champak leaf', sci: 'Michelia alba', price: 780 },
+                { name: '快樂鼠尾草', en: 'Clary sage', sci: 'Salvia sclarea', price: 480 },
+                { name: '波旁天竺葵', en: 'Geranium Bourbon', sci: 'Pelargonium graveolens', price: 380 },
+                { name: '玫瑰草', en: 'Palmarosa', sci: 'Cymbopogon martinii', price: 380 },
+                { name: '檸檬薄荷', en: 'Bergamot mint', sci: 'Mentha citrata', price: 480 },
+                { name: '蜂香薄荷', en: 'Monarda', sci: 'Monarda fistulosa', price: 480 },
+                { name: '胡椒薄荷', en: 'Peppermint', sci: 'Mentha piperita', price: 280 },
+                { name: '澳洲尤加利', en: 'Eucalyptus australia', sci: 'Eucalyptus radiata', price: 280 },
+                { name: '茶樹', en: 'Tea Tree', sci: 'Melaleuca alternifolia', price: 280 },
+                { name: '芳枸葉', en: 'Fragonia', sci: 'Agonis fragran', price: 980 },
+                { name: '桉油醇迷迭香', en: 'Rosemary', sci: 'Salvia rosmarinus CT cineole', price: 280 },
+                { name: '檸檬尤加利', en: 'Lemon Eucalyptus', sci: 'Eucalyptus citriodora', price: 180 },
+                { name: '甜馬鬱蘭', en: 'Sweet Marjoram', sci: 'Origanum majorana', price: 380 },
+                { name: '廣藿香', en: 'Patchouli', sci: 'Pogostemon cablin', price: 480 },
+                { name: '百里酚百里香', en: 'Thyme Thymol', sci: 'Thymus vulgaris', price: 480 },
+                { name: '肉桂葉', en: 'Cinnamon leaf', sci: 'Cinnamomum Zylanicum', price: 280 }
+            ]},
+            { category: '根與樹脂 (Roots & Resins)', items: [
+                { name: '印度乳香', en: 'India Frankincense', sci: 'Boswellia serrata', price: 380 },
+                { name: '索馬利亞乳香', en: 'Somalia Frankincense', sci: 'Boswellia carterii', price: 880 },
+                { name: '特級沒藥', en: 'Myrrh', sci: 'Commiphora myrrha', price: 980 },
+                { name: '安息香', en: 'Benzoin', sci: 'Styrax benzoin', price: 280 },
+                { name: '岩蘭草', en: 'Vetiver', sci: 'Chrysopogon zizanioides', price: 780 },
+                { name: '薑CO2', en: 'Ginger', sci: 'Zingiber officianale', price: 680 }
+            ]},
+            { category: '樹木 (Woods)', items: [
+                { name: '歐洲赤松', en: 'Scotch pine', sci: 'Pinus sylvestris', price: 280 },
+                { name: '西伯利亞冷杉', en: 'Siberian Fir', sci: 'Abies sibirica', price: 280 },
+                { name: '黑雲杉', en: 'Black Sprucen', sci: 'Picea mariana', price: 580 },
+                { name: '絲柏', en: 'Cypress', sci: 'Cupressus sempervirens', price: 280 },
+                { name: '高地杜松', en: 'Mountain Juniper', sci: 'Juniperus communis', price: 880 },
+                { name: '台灣香杉', en: 'Luanta Fir', sci: 'Cunninghamia konishii', price: 980 },
+                { name: '檜木(紅檜)', en: 'Taiwan Hinoki', sci: 'Chamaecyparis formosensis', price: 580 },
+                { name: '特選花梨木', en: 'Rosewood', sci: 'Anita rosaeodora', price: 1280 },
+                { name: '澳洲檀香', en: 'Australian Sandalwood', sci: 'Tantalum spicatum', price: 2880 },
+                { name: '喜馬拉雅雪松', en: 'Himalayan Cedarwood', sci: 'Cedrus deodara', price: 280 },
+                { name: '大西洋雪松', en: 'Atlas Cedarwood', sci: 'Cedrus atlantica', price: 280 }
+            ]},
+            { category: '花朵 (Flowers)', items: [
+                { name: '完全依蘭', en: 'Ylang Ylang', sci: 'Canango odorata', price: 480 },
+                { name: '橙花', en: 'Neroli', sci: 'Citrus aurantium', price: 2280 },
+                { name: '羅馬洋甘菊', en: 'Roman Chamomile', sci: 'Chamaemelum nobile', price: 2080 },
+                { name: '德國洋甘菊', en: 'German Chamomile', sci: 'Matricaria recutita', price: 2280 },
+                { name: '永久花', en: 'Immortelle', sci: 'Helichrysum italicum', price: 2280 },
+                { name: '聖巴克茉莉原精', en: 'Sambac Jasmine', sci: 'Jasminum sambac', price: 4280 },
+                { name: '大馬士革玫瑰原精', en: 'Damask Rose Absolute', sci: 'Rosa damascena', price: 4680 },
+                { name: '大馬士革玫瑰', en: 'Damask Rose', sci: 'Rosa damascena', price: 11800 }
+            ]}
+        ];
+
+        let cart = {};
+
+        function init() {
+            const listContainer = document.getElementById('product-list');
+            
+            rawData.forEach((cat, catIdx) => {
+                const section = document.createElement('div');
+                
+                const title = document.createElement('h2');
+                title.className = 'text-2xl font-bold text-[#748069] mb-4 border-b-2 border-[#f1cf71] pb-2 inline-block';
+                title.innerText = cat.category;
+                section.appendChild(title);
+
+                const tableWrapper = document.createElement('div');
+                tableWrapper.className = 'overflow-x-auto bg-[#FFFFFF] rounded-lg shadow-sm border border-[#748069]/20 mb-10';
+
+                const table = document.createElement('table');
+                table.className = 'w-full min-w-[900px] text-left border-collapse';
+
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr class="bg-[#fdfcf8] border-b-2 border-[#748069]">
+                        <th class="py-4 px-6 text-[#748069] font-bold whitespace-nowrap w-[20%]">精油</th>
+                        <th class="py-4 px-6 text-[#748069] font-bold whitespace-nowrap w-[20%]">英文</th>
+                        <th class="py-4 px-6 text-[#748069] font-bold whitespace-nowrap w-[25%]">學名</th>
+                        <th class="py-4 px-6 text-[#748069] font-bold whitespace-nowrap w-[10%] text-right">定價</th>
+                        <th class="py-4 px-6 text-[#748069] font-bold whitespace-nowrap w-[10%] text-right">優惠價</th>
+                        <th class="py-4 px-6 text-[#748069] font-bold whitespace-nowrap w-[15%] text-center">選購數量</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+
+                cat.items.forEach((item, itemIdx) => {
+                    const id = `item-${catIdx}-${itemIdx}`;
+                    const discountPrice = Math.round(item.price * 0.9);
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = 'product-row border-b border-gray-100 last:border-none';
+                    
+                    tr.innerHTML = `
+                        <td class="py-4 px-6 text-gray-800 font-medium">${item.name}</td>
+                        <td class="py-4 px-6 text-gray-500 text-sm">${item.en}</td>
+                        <td class="py-4 px-6 text-gray-400 text-sm italic">${item.sci}</td>
+                        <td class="py-4 px-6 text-gray-400 text-right line-through text-sm">${item.price}</td>
+                        <td class="py-4 px-6 text-[#748069] font-bold text-right text-lg">$${discountPrice}</td>
+                        <td class="py-4 px-6">
+                            <div class="flex items-center justify-center gap-3">
+                                <button onclick="updateQty('${id}', -1, '${item.name}', ${discountPrice})" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition">-</button>
+                                <span id="qty-${id}" class="font-medium w-8 text-center text-[#748069] text-lg">0</span>
+                                <button onclick="updateQty('${id}', 1, '${item.name}', ${discountPrice})" class="w-8 h-8 flex items-center justify-center rounded-full bg-[#748069] hover:bg-[#5c6653] text-[#FFFFFF] font-bold transition shadow-sm">+</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                table.appendChild(tbody);
+                tableWrapper.appendChild(table);
+                section.appendChild(tableWrapper);
+                listContainer.appendChild(section);
+            });
+        }
+
+        function updateQty(id, change, name, price) {
+            if (!cart[id]) cart[id] = { name, price, qty: 0 };
+            
+            cart[id].qty += change;
+            if (cart[id].qty < 0) cart[id].qty = 0;
+            
+            document.getElementById(`qty-${id}`).innerText = cart[id].qty;
+            
+            if (cart[id].qty === 0) delete cart[id];
+            
+            updateCartUI();
+        }
+
+        function clearCart() {
+            if (Object.keys(cart).length === 0) return;
+            if (confirm("確定要清除購物車內的所有商品嗎？")) {
+                for (let id in cart) {
+                    if (document.getElementById(`qty-${id}`)) {
+                        document.getElementById(`qty-${id}`).innerText = "0";
+                    }
+                }
+                cart = {};
+                updateCartUI();
+            }
+        }
+
+        function updateCartUI() {
+            let totalQty = 0;
+            let subtotal = 0;
+            
+            for (let id in cart) {
+                totalQty += cart[id].qty;
+                subtotal += cart[id].qty * cart[id].price;
+            }
+            
+            const isFreeShipping = subtotal >= 2000;
+            // 運費依賣貨便規定，統計金額不包含運費
+            const grandTotal = subtotal;
+            
+            document.getElementById('total-qty').innerText = totalQty;
+            document.getElementById('subtotal').innerText = subtotal.toLocaleString();
+            
+            if (subtotal === 0) {
+                document.getElementById('shipping-fee').innerText = 'NT$ 0';
+            } else {
+                document.getElementById('shipping-fee').innerText = isFreeShipping ? '免運' : '依賣貨便規定';
+            }
+            
+            document.getElementById('grand-total').innerText = grandTotal.toLocaleString();
+
+            const diffSpan = document.getElementById('free-shipping-diff');
+            if (subtotal === 0) {
+                diffSpan.innerHTML = '(滿 $2000 免運)';
+            } else if (!isFreeShipping) {
+                const diff = 2000 - subtotal;
+                diffSpan.innerHTML = `(還差 <span class="text-white font-bold">$${diff.toLocaleString()}</span> 免運)`;
+            } else {
+                diffSpan.innerHTML = '(已達免運門檻)';
+            }
+        }
+
+        // 開啟填寫訂購資訊的 Modal
+        function checkout() {
+            if (Object.keys(cart).length === 0) {
+                alert('購物車是空的，請先選擇商品喔！');
+                return;
+            }
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            document.getElementById('customer-name').focus();
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        async function proceedToPDF() {
+            const customerNameInput = document.getElementById('customer-name');
+            const customerName = customerNameInput.value.trim();
+            
+            if (!customerName) {
+                alert('請輸入訂購人姓名，以便為您核對訂單喔！');
+                customerNameInput.focus();
+                return;
+            }
+
+            closeCheckoutModal();
+            document.getElementById('loading').style.display = 'flex';
+
+            let invoiceRows = '';
+            let subtotal = 0;
+            
+            for (let id in cart) {
+                const item = cart[id];
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                
+                invoiceRows += `
+                    <tr style="border-bottom: 1px solid #f1f1f1;">
+                        <td style="padding: 14px 16px; font-weight: 500;">${item.name}</td>
+                        <td style="padding: 14px 16px; text-align: right;">$${item.price.toLocaleString()}</td>
+                        <td style="padding: 14px 16px; text-align: right;">${item.qty}</td>
+                        <td style="padding: 14px 16px; text-align: right; font-weight: 500;">$${itemTotal.toLocaleString()}</td>
+                    </tr>
+                `;
+            }
+            
+            const isFreeShipping = subtotal >= 2000;
+            const total = subtotal;
+            const d = new Date();
+            const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+            const fileDateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+
+            const htmlString = `
+            <div style="width: 800px; padding: 50px; background: #FFFFFF; color: #333333; font-family: 'Noto Sans TC', sans-serif; box-sizing: border-box;">
+                <div style="text-align: center; margin-bottom: 40px; border-bottom: 2px solid #748069; padding-bottom: 20px;">
+                    <h1 style="font-size: 32px; font-weight: bold; letter-spacing: 2px; color: #748069; margin: 0 0 10px 0;">氣味工程師 Sharon 嚴選</h1>
+                    <p style="font-size: 18px; color: #666; margin: 0;">HOKI｜單方精油 5ml - 訂購單</p>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; color: #333; font-size: 16px; background-color: #fdfcf8; padding: 15px; border-radius: 8px; border: 1px solid #eaeaea;">
+                    <div>
+                        <p style="margin: 0 0 8px 0;"><strong>訂購人姓名：</strong> <span style="color: #748069; font-weight: bold; font-size: 18px;">${customerName}</span></p>
+                        <p style="margin: 0;"><strong>訂購日期：</strong> ${dateStr}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0;"><strong>官方 LINE：</strong> @401hpxwg</p>
+                    </div>
+                </div>
+
+                <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 40px; font-size: 16px;">
+                    <thead>
+                        <tr style="background-color: rgba(116, 128, 105, 0.1); border-bottom: 2px solid #748069;">
+                            <th style="padding: 12px 16px; color: #748069; font-weight: bold;">商品名稱 (5ML)</th>
+                            <th style="padding: 12px 16px; color: #748069; font-weight: bold; text-align: right;">單價 (9折)</th>
+                            <th style="padding: 12px 16px; color: #748069; font-weight: bold; text-align: right;">數量</th>
+                            <th style="padding: 12px 16px; color: #748069; font-weight: bold; text-align: right;">小計</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${invoiceRows}
+                    </tbody>
+                </table>
+
+                <div style="display: flex; justify-content: flex-end; font-size: 16px;">
+                    <div style="width: 320px; text-align: right;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <span style="color: #666;">商品總計：</span>
+                            <span>NT$ ${subtotal.toLocaleString()}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <span style="color: #666;">運費：</span>
+                            <span>${isFreeShipping ? '免運' : '依賣貨便規定'}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-top: 2px solid #f1cf71; padding-top: 15px; margin-top: 15px;">
+                            <span style="font-size: 22px; font-weight: bold; color: #748069;">訂單總額：</span>
+                            <span style="font-size: 22px; font-weight: bold; color: #748069;">NT$ ${total.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 60px; text-align: center; font-size: 14px; color: #888;">
+                    <p style="margin: 0;">感謝您的訂購！請將此 PDF 檔案傳送至官方 LINE 完成結帳。</p>
+                </div>
+            </div>
+            `;
+
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     `HOKI單方_${customerName}_${fileDateStr}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, width: 800, windowWidth: 800, x: 0, y: 0, scrollX: 0, scrollY: 0 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            window.scrollTo(0, 0);
+
+            setTimeout(async () => {
+                try {
+                    await html2pdf().set(opt).from(htmlString).save();
+                    document.getElementById('line-modal').classList.remove('hidden');
+                } catch (err) {
+                    console.error(err);
+                    alert('PDF 產生失敗，請稍後再試。');
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            }, 300);
+        }
+
+        function closeLineModal() {
+            document.getElementById('line-modal').classList.add('hidden');
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>
