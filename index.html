@@ -5,39 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KURES 氣味選品型錄 ｜ 專屬客製香氛與單方精油</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #fdfcf8; color: #333333; }
+        
+        /* Loading Overlay */
+        .loading-overlay { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(253, 252, 248, 0.95);
+            z-index: 99999; 
+            justify-content: center; 
+            align-items: center; 
+            flex-direction: column;
+        }
+
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #fdfcf8; }
         ::-webkit-scrollbar-thumb { background: #748069; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #5c6653; }
         .product-card { transition: all 0.2s ease; }
         .product-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -4px rgba(116, 128, 105, 0.15); }
-
-        /* 列印與存為 PDF 專用樣式 */
-        #print-area { display: none; }
-        @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area {
-                display: block !important;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: #ffffff;
-                padding: 20px;
-                color: #333333;
-            }
-        }
     </style>
 </head>
-<body class="pb-48">
+<body class="pb-48 relative">
 
-    <!-- 頂部品牌主視覺 Banner (首屏載入優先) -->
+    <!-- 頂部品牌主視覺 Banner -->
     <div class="w-full bg-[#fdfcf8] overflow-hidden border-b border-[#748069]/20">
-        <img src="./images/header.png" alt="KURES Header" fetchpriority="high" decoding="async" class="w-full max-h-[380px] object-cover object-center mx-auto block">
+        <img src="./images/header.png" alt="KURES Header" class="w-full max-h-[380px] object-cover object-center mx-auto block">
     </div>
 
     <!-- Header & 品牌哲學介紹 -->
@@ -79,24 +76,24 @@
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
                         <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
-                            <img id="inhaler-main-img" src="./images/SM01.png" loading="lazy" decoding="async" alt="單支嗅吸棒" class="w-full h-full object-cover transition-opacity duration-200">
+                            <img id="inhaler-main-img" src="./images/SM01.png" alt="單支嗅吸棒" class="w-full h-full object-cover transition-opacity duration-200">
                         </div>
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             <button type="button" onclick="switchImg('inhaler-main-img', './images/SM01.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/SM01.png" loading="lazy" decoding="async" class="w-full h-full object-cover" alt="單支">
+                                    <img src="./images/SM01.png" class="w-full h-full object-cover" alt="單支">
                                 </div>
                                 <span class="text-[10px] block text-center text-gray-500 mt-1">單支</span>
                             </button>
                             <button type="button" onclick="switchImg('inhaler-main-img', './images/SM02.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/SM02.png" loading="lazy" decoding="async" class="w-full h-full object-cover" alt="套組">
+                                    <img src="./images/SM02.png" class="w-full h-full object-cover" alt="套組">
                                 </div>
                                 <span class="text-[10px] block text-center text-gray-500 mt-1">套組</span>
                             </button>
                             <button type="button" onclick="switchImg('inhaler-main-img', './images/SM03.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/SM03.png" loading="lazy" decoding="async" class="w-full h-full object-cover" alt="刻字">
+                                    <img src="./images/SM03.png" class="w-full h-full object-cover" alt="刻字">
                                 </div>
                                 <span class="text-[10px] block text-center text-gray-500 mt-1">刻字</span>
                             </button>
@@ -181,7 +178,6 @@
                             <p><strong>・嗅吸棒套組：</strong>旋開外蓋滴入 10 滴精油於棉棒，將出氣孔置於鼻前 2–3 公分處自然呼吸；使用完畢請務必旋緊外蓋以防精油揮發。</p>
                             <p><strong>・保存方式：</strong>請旋緊木蓋，置於陰涼乾燥處，避免陽光直射與高溫環境。</p>
 
-                            <!-- 僅在選擇「森」時出現的禁忌事項 -->
                             <div id="inhaler-forest-warning" class="mt-2 pt-2 border-t border-amber-200 text-amber-900 bg-amber-50/80 p-2 rounded">
                                 <p class="text-red-700 font-bold mb-1">⚠️「森 Forest」禁忌注意事項：</p>
                                 <p>本配方含有歐薄荷與迷迭香精油。孕婦、哺乳期婦女、6歲以下幼童、癲癇患者及蠶豆症（G6PD缺乏症）患者請勿使用。</p>
@@ -191,28 +187,28 @@
                     </div>
                 </div>
 
-                <!-- 2. 精油香氛車用擴香 -->
+                <!-- 2. 精油香氛車用擴香 (已移除森、息) -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
                         <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
-                            <img id="car-main-img" src="./images/Car01.png" loading="lazy" decoding="async" alt="車用擴香套組" class="w-full h-full object-cover transition-opacity duration-200">
+                            <img id="car-main-img" src="./images/Car01.png" alt="車用擴香套組" class="w-full h-full object-cover transition-opacity duration-200">
                         </div>
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             <button type="button" onclick="switchImg('car-main-img', './images/Car01.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/Car01.png" loading="lazy" decoding="async" class="w-full h-full object-cover" alt="套組/文字">
+                                    <img src="./images/Car01.png" class="w-full h-full object-cover" alt="套組/文字">
                                 </div>
                                 <span class="text-[10px] block text-center text-gray-500 mt-1">套組/文字</span>
                             </button>
                             <button type="button" onclick="switchImg('car-main-img', './images/Car02.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/Car02.png" loading="lazy" decoding="async" class="w-full h-full object-cover" alt="車夾展示">
+                                    <img src="./images/Car02.png" class="w-full h-full object-cover" alt="車夾展示">
                                 </div>
                                 <span class="text-[10px] block text-center text-gray-500 mt-1">情境展示</span>
                             </button>
                             <button type="button" onclick="switchImg('car-main-img', './images/Car03.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/Car03.png" loading="lazy" decoding="async" class="w-full h-full object-cover" alt="線稿客製">
+                                    <img src="./images/Car03.png" class="w-full h-full object-cover" alt="線稿客製">
                                 </div>
                                 <span class="text-[10px] block text-center text-gray-500 mt-1">圖案刻印</span>
                             </button>
@@ -311,7 +307,7 @@
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
                         <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-100">
-                            <img src="./images/BEO01.png" loading="lazy" decoding="async" alt="複方純精油" class="w-full h-full object-cover">
+                            <img src="./images/BEO01.png" alt="複方純精油" class="w-full h-full object-cover">
                         </div>
 
                         <div class="flex justify-between items-start mb-1">
@@ -384,49 +380,43 @@
                     <button onclick="clearAllCart()" class="text-xs text-gray-300 hover:text-white underline mr-1">
                         清除
                     </button>
-                    <button onclick="exportOrderPDF()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-2.5 rounded-lg text-sm font-medium transition">
-                        下載 / 存為 PDF
+                    <button onclick="exportOrderPDF()" class="bg-[#f1cf71] hover:bg-[#e0bc5a] text-[#748069] px-4 py-2.5 rounded-lg font-bold shadow-md transition text-sm">
+                        下載訂單 PDF
                     </button>
-                    <button onclick="copyToLine()" class="bg-[#f1cf71] hover:bg-[#e2bd5b] text-[#748069] px-5 py-2.5 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.03-.17.6-.62 2.19-.71 2.53-.11.43.16.42.34.3 1.4-1 3.23-2.15 3.55-2.38.96.26 1.95.4 2.96.4 5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
-                        <span>複製明細並前往 LINE</span>
+                    <button onclick="copyToLine()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-lg font-bold shadow transition text-sm flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.03-.17.6-.62 2.19-.71 2.53-.11.43.16.42.34.3 1.4-1 3.23-2.15 3.55-2.38.96.26 1.95.4 2.96.4 5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
+                        <span>複製明細</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 彈窗：引導前往 LINE 與賣貨便 -->
-    <div id="order-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex justify-center items-center px-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center border-t-4 border-[#748069]">
-            <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-                ✓
-            </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-1">明細已成功複製！</h3>
-            <p class="text-xs text-[#748069] font-bold mb-4" id="modal-order-id">訂單識別碼：#K-0000</p>
-            
-            <div class="text-left bg-[#fdfcf8] p-4 rounded-xl border border-gray-200 text-xs text-gray-700 space-y-2.5 mb-6 leading-relaxed">
-                <p class="font-bold text-sm text-gray-900">下一步下單流程：</p>
-                <p>1. 點擊下方按鈕前往 <strong>官方 LINE</strong>，將明細直接「貼上」傳送給我們確認客製細節。</p>
-                <p>2. 核對無誤後，請至賣貨便（1元賣場）將購買數量輸入為總額 <strong><span id="modal-total-amt" class="text-red-600 font-bold">0</span></strong> 完成結帳。</p>
-                <p class="text-[11px] text-gray-500">（若未達 2,000 元免運，系統將於賣貨便結帳時自動計入運費）</p>
-                <p class="text-[11px] text-amber-800 bg-amber-50 p-2 rounded border border-amber-200">
-                    💡 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
-                </p>
-            </div>
+    <!-- Loading Overlay (完全採用 HOKI_EO.html 做法) -->
+    <div id="loading" class="loading-overlay">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#748069] mb-4"></div>
+        <p class="text-[#748069] font-bold tracking-wide text-lg">正在為您生成訂單 PDF...</p>
+        <p class="text-[#748069] opacity-80 text-sm mt-2">請稍候，系統正在處理排版</p>
+    </div>
 
-            <a href="https://lin.ee/nztXyF1" target="_blank" onclick="closeOrderModal()" 
-               class="block w-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold py-3 px-4 rounded-xl shadow transition mb-3">
-                前往官方 LINE 貼上明細
+    <!-- PDF 完成後提示前往 LINE 彈窗 -->
+    <div id="line-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex justify-center items-center px-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-t-4 border-[#748069]">
+            <div class="w-14 h-14 bg-[#748069]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-[#748069]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-2xl font-bold text-[#748069] mb-2">訂單 PDF 已下載！</h3>
+            <p class="text-gray-600 mb-6 text-left leading-relaxed text-sm">
+                請點擊下方按鈕前往我們的官方 LINE，將您剛剛下載的 <strong>訂單 PDF 檔案</strong> 傳送給我們核對製作內容，核對後即可前往賣貨便結帳完成下單。
+            </p>
+            <a href="https://lin.ee/nztXyF1" target="_blank" onclick="closeLineModal()" class="block w-full bg-[#00B900] hover:bg-[#009900] text-white font-bold py-3 px-4 rounded-md transition-colors mb-3 shadow-sm">
+                前往官方 LINE
             </a>
-            <button onclick="closeOrderModal()" class="w-full py-2.5 text-xs text-gray-400 hover:text-gray-600">
+            <button onclick="closeLineModal()" class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium py-2.5 px-4 rounded-md transition-colors text-sm">
                 關閉
             </button>
         </div>
     </div>
-
-    <!-- 專用列印與 PDF 匯出容器 -->
-    <div id="print-area"></div>
 
     <script>
         const singleOilsData = [
@@ -505,10 +495,7 @@
         let singleOilsCart = {};
 
         window.onload = function() {
-            // 利用 requestAnimationFrame 延遲非同步渲染，避免阻塞首屏繪製
-            requestAnimationFrame(() => {
-                renderSingleOils();
-            });
+            renderSingleOils();
             onInhalerScentChange();
             calculateCart();
         };
@@ -534,7 +521,7 @@
 
         function renderSingleOils() {
             const container = document.getElementById('single-oil-container');
-            const fragment = document.createDocumentFragment();
+            container.innerHTML = '';
 
             singleOilsData.forEach((cat, catIdx) => {
                 const catDiv = document.createElement('div');
@@ -588,11 +575,8 @@
 
                 tableWrap.appendChild(table);
                 catDiv.appendChild(tableWrap);
-                fragment.appendChild(catDiv);
+                container.appendChild(catDiv);
             });
-
-            container.innerHTML = '';
-            container.appendChild(fragment);
         }
 
         function changeCustomQty(key, delta) {
@@ -801,66 +785,114 @@
             text += `👉 請協助核對以上配方與刻印內容，確認無誤後我將前往賣貨便下單！`;
 
             navigator.clipboard.writeText(text).then(() => {
-                document.getElementById('modal-order-id').innerText = `訂單識別碼：${orderId}`;
-                document.getElementById('modal-total-amt').innerText = `NT$ ${subtotal.toLocaleString()}`;
-                document.getElementById('order-modal').classList.remove('hidden');
+                alert('明細已複製到剪貼簿！可直接前往 LINE 貼上傳送。');
             }).catch(err => {
                 alert('複製失敗，請手動截圖購物車內容傳送至 LINE。');
             });
         }
 
-        function closeOrderModal() {
-            document.getElementById('order-modal').classList.add('hidden');
+        function closeLineModal() {
+            document.getElementById('line-modal').classList.add('hidden');
         }
 
-        function exportOrderPDF() {
+        /* 採用 HOKI_EO.html 完全脫離 Viewport 限制的純 HTML 字串輸出架構 */
+        async function exportOrderPDF() {
             const { items, subtotal } = getOrderDetails();
             if (items.length === 0) {
                 alert('購物車是空的，請先挑選商品！');
                 return;
             }
 
-            let rows = '';
+            document.getElementById('loading').style.display = 'flex';
+
+            let invoiceRows = '';
             items.forEach(it => {
-                rows += `
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 10px 12px; color: #1f2937;">${it.name}</td>
-                        <td style="padding: 10px 12px; text-align: right; color: #4b5563;">NT$ ${it.price.toLocaleString()}</td>
-                        <td style="padding: 10px 12px; text-align: right; color: #4b5563;">${it.qty}</td>
-                        <td style="padding: 10px 12px; text-align: right; color: #111827; font-weight: 600;">NT$ ${it.total.toLocaleString()}</td>
+                invoiceRows += `
+                    <tr style="border-bottom: 1px solid #f1f1f1;">
+                        <td style="padding: 12px 14px; font-weight: 500; color: #333;">${it.name}</td>
+                        <td style="padding: 12px 14px; text-align: right; color: #555;">$${it.price.toLocaleString()}</td>
+                        <td style="padding: 12px 14px; text-align: right; color: #555;">${it.qty}</td>
+                        <td style="padding: 12px 14px; text-align: right; font-weight: bold; color: #333;">$${it.total.toLocaleString()}</td>
                     </tr>
                 `;
             });
 
-            const printArea = document.getElementById('print-area');
-            printArea.innerHTML = `
-                <div style="max-width: 650px; margin: 0 auto; font-family: 'Noto Sans TC', sans-serif;">
-                    <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #748069; padding-bottom: 16px;">
-                        <h2 style="color: #748069; font-size: 22px; font-weight: bold; margin: 0 0 6px 0;">KURES 氣味選品明細單</h2>
-                        <p style="color: #6b7280; font-size: 13px; margin: 0;">官方 LINE: @nztXyF1</p>
-                    </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
-                        <thead>
-                            <tr style="background-color: #f4f6f2; border-bottom: 2px solid #748069; color: #748069;">
-                                <th style="padding: 10px 12px; text-align: left; font-weight: bold;">商品品項</th>
-                                <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 90px;">單價</th>
-                                <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 60px;">數量</th>
-                                <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 100px;">小計</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                    <div style="text-align: right; font-size: 14px; border-top: 1px solid #748069; padding-top: 12px;">
-                        <p style="margin: 4px 0; font-size: 16px; color: #111827;"><strong>商品總計：NT$ ${subtotal.toLocaleString()}</strong></p>
-                        <p style="font-size: 12px; color: #6b7280; margin: 4px 0;">(滿 NT$ 2,000 免運，未滿以賣貨便為準)</p>
-                        <p style="font-size: 12px; color: #748069; margin: 12px 0 0 0; text-align: center; padding-top: 12px; border-top: 1px dashed #d1d5db;">
-                            🌿 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
-                        </p>
+            const shipping = subtotal >= 2000 ? 0 : 60;
+            const grandTotal = subtotal + (subtotal >= 2000 ? 0 : 0);
+            const d = new Date();
+            const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+
+            const htmlString = `
+            <div style="width: 800px; padding: 50px; background: #FFFFFF; color: #333333; font-family: 'Noto Sans TC', sans-serif; box-sizing: border-box;">
+                <div style="text-align: center; margin-bottom: 35px; border-bottom: 2px solid #748069; padding-bottom: 20px;">
+                    <h1 style="font-size: 30px; font-weight: bold; letter-spacing: 2px; color: #748069; margin: 0 0 10px 0;">KURES 氣味選品型錄</h1>
+                    <p style="font-size: 16px; color: #666; margin: 0;">專屬客製香氛與單方精油 - 訂購明細單</p>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; color: #333; font-size: 15px;">
+                    <p style="margin: 0;"><strong>訂購日期：</strong> ${dateStr}</p>
+                    <p style="margin: 0;"><strong>官方 LINE：</strong> @nztXyF1</p>
+                </div>
+
+                <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 30px; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: rgba(116, 128, 105, 0.1); border-bottom: 2px solid #748069;">
+                            <th style="padding: 12px 14px; color: #748069; font-weight: bold;">選購商品項目</th>
+                            <th style="padding: 12px 14px; color: #748069; font-weight: bold; text-align: right; width: 90px;">單價</th>
+                            <th style="padding: 12px 14px; color: #748069; font-weight: bold; text-align: right; width: 60px;">數量</th>
+                            <th style="padding: 12px 14px; color: #748069; font-weight: bold; text-align: right; width: 100px;">小計</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${invoiceRows}
+                    </tbody>
+                </table>
+
+                <div style="display: flex; justify-content: flex-end; font-size: 15px;">
+                    <div style="width: 320px; text-align: right;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="color: #666;">商品總計：</span>
+                            <span>NT$ ${subtotal.toLocaleString()}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="color: #666;">運費門檻：</span>
+                            <span>${subtotal >= 2000 ? '已達滿 $2,000 免運' : '未達免運 (依賣貨便為準)'}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-top: 2px solid #f1cf71; padding-top: 12px; margin-top: 12px;">
+                            <span style="font-size: 20px; font-weight: bold; color: #748069;">預估總額：</span>
+                            <span style="font-size: 20px; font-weight: bold; color: #748069;">NT$ ${subtotal.toLocaleString()}</span>
+                        </div>
                     </div>
                 </div>
+                
+                <div style="margin-top: 50px; text-align: center; font-size: 13px; color: #748069; border-top: 1px dashed #ddd; padding-top: 20px;">
+                    <p style="margin: 0 0 6px 0; font-weight: 500;">所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候</p>
+                    <p style="margin: 0; color: #888; font-size: 12px;">感謝您的預約訂購！請將此 PDF 傳送至官方 LINE 完成客製細節核對。</p>
+                </div>
+            </div>
             `;
 
-            window.print();
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     'KURES_Order_Sharon.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, width: 800, windowWidth: 800, x: 0, y: 0, scrollX: 0, scrollY: 0 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            window.scrollTo(0, 0);
+
+            setTimeout(async () => {
+                try {
+                    await html2pdf().set(opt).from(htmlString).save();
+                    document.getElementById('line-modal').classList.remove('hidden');
+                } catch (err) {
+                    console.error('PDF 生成錯誤:', err);
+                    alert('PDF 產生失敗，請稍後再試。');
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            }, 300);
         }
     </script>
 </body>
