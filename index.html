@@ -25,14 +25,8 @@
     </div>
 
     <!-- Header & 品牌哲學介紹 -->
-    <header class="bg-[#748069] text-white py-12 px-4 shadow-md relative overflow-hidden text-center">
+    <header class="bg-[#748069] text-white py-10 px-4 shadow-md relative overflow-hidden text-center">
         <div class="max-w-3xl mx-auto">
-            <h1 class="text-3xl sm:text-4xl font-bold tracking-[0.2em] mb-2 uppercase">KURES</h1>
-            <p class="text-xs sm:text-sm font-light tracking-[0.3em] uppercase opacity-85 mb-6">Scientific Fragrance & Botanical Design</p>
-            
-            <div class="w-10 h-0.5 bg-[#f1cf71] mx-auto mb-6"></div>
-
-            <!-- 品牌介紹文案 -->
             <div class="text-sm sm:text-base font-light leading-relaxed tracking-wide opacity-95 space-y-3 px-2 sm:px-6 text-justify sm:text-center">
                 <p>
                     氣味是自然界最精密的生命語言，KURES 深入探索植物的芳香結構，選用純淨天然精油與原生香氣分子，透過當代調香工藝重新交織排列。
@@ -43,7 +37,7 @@
             </div>
 
             <!-- 優惠與免運標籤 -->
-            <div class="mt-8 flex flex-wrap justify-center gap-2.5">
+            <div class="mt-7 flex flex-wrap justify-center gap-2.5">
                 <span class="bg-[#f1cf71] text-[#748069] px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-sm">
                     全館滿 NT$ 2,000 免運
                 </span>
@@ -65,115 +59,173 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                <!-- 1. 嗅吸棒 -->
+                <!-- 1. 100% 精油櫸木嗅吸棒 -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
-                        <!-- 圖片展示與縮圖切換 -->
-                        <div class="w-full h-52 bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
+                        <!-- 正方形圖片展示與縮圖切換 (aspect-square) -->
+                        <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
                             <img id="inhaler-main-img" src="./images/SM01.png" alt="單支嗅吸棒" class="w-full h-full object-cover transition-opacity duration-200">
                         </div>
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             <button type="button" onclick="switchImg('inhaler-main-img', './images/SM01.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
-                                <img src="./images/SM01.png" class="w-full h-12 object-cover rounded" alt="單支">
-                                <span class="text-[10px] block text-center text-gray-500 mt-0.5">單支</span>
+                                <div class="w-full aspect-square overflow-hidden rounded">
+                                    <img src="./images/SM01.png" class="w-full h-full object-cover" alt="單支">
+                                </div>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">單支</span>
                             </button>
                             <button type="button" onclick="switchImg('inhaler-main-img', './images/SM02.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
-                                <img src="./images/SM02.png" class="w-full h-12 object-cover rounded" alt="套組">
-                                <span class="text-[10px] block text-center text-gray-500 mt-0.5">套組</span>
+                                <div class="w-full aspect-square overflow-hidden rounded">
+                                    <img src="./images/SM02.png" class="w-full h-full object-cover" alt="套組">
+                                </div>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">套組</span>
                             </button>
                             <button type="button" onclick="switchImg('inhaler-main-img', './images/SM03.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
-                                <img src="./images/SM03.png" class="w-full h-12 object-cover rounded" alt="刻字">
-                                <span class="text-[10px] block text-center text-gray-500 mt-0.5">刻字</span>
+                                <div class="w-full aspect-square overflow-hidden rounded">
+                                    <img src="./images/SM03.png" class="w-full h-full object-cover" alt="刻字">
+                                </div>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">刻字</span>
                             </button>
                         </div>
 
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-xl font-bold text-gray-800">100% 純精油嗅吸棒</h3>
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="text-xl font-bold text-gray-800">100% 精油櫸木嗅吸棒</h3>
                             <span class="text-[#748069] font-bold text-lg">NT$ 450</span>
                         </div>
                         <p class="text-xs text-gray-500 mb-4">材質：天然櫸木、專用棉芯｜內含複方精油 0.5ml</p>
 
-                        <!-- 氣味選擇 -->
-                        <div class="mb-3">
-                            <label class="block text-xs font-bold text-gray-700 mb-1">氣味選擇：</label>
-                            <select id="inhaler-scent" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:border-[#748069] outline-none">
+                        <!-- 香氣選擇 -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">嗅吸棒香氣選擇：</label>
+                            <select id="inhaler-scent" onchange="onInhalerScentChange()" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:border-[#748069] outline-none">
                                 <option value="森 Forest (甜橙/歐薄荷/絲柏/迷迭香/檜木)">森 Forest（甜橙/歐薄荷/迷迭香/檜木）</option>
                                 <option value="煦 Glow (甜橙/白玉蘭葉/紅桔/岩蘭草)">煦 Glow（甜橙/白玉蘭葉/紅桔/岩蘭草）</option>
+                                <option value="息 Rest (佛手柑/真正薰衣草/穗甘松)">息 Rest（佛手柑/真正薰衣草/穗甘松）</option>
                             </select>
                         </div>
 
-                        <!-- 加購項 -->
-                        <div class="space-y-2 bg-[#fdfcf8] p-3 rounded-lg border border-gray-100 text-sm mb-4">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" id="inhaler-add-oil" onchange="onInhalerOilChange()" class="accent-[#748069] w-4 h-4">
-                                <span>加購 5ml 複方精油 (+NT$ 680)</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" id="inhaler-add-engrave" onchange="toggleInhalerEngrave()" class="accent-[#748069] w-4 h-4">
-                                <span>加購客製刻字服務 (+NT$ 100)</span>
-                            </label>
-                            <div id="inhaler-engrave-box" class="hidden mt-2">
-                                <input type="text" id="inhaler-engrave-text" maxlength="10" placeholder="欲刻文字 (限10個英文字母)" 
-                                       class="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#748069] outline-none">
-                                <span class="text-[11px] text-gray-400">下單後請到官方 LINE 告知訂單號碼與欲刻文字</span>
+                        <!-- 嗅吸棒主數量選擇 -->
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 mb-4">
+                            <div>
+                                <span class="text-sm font-bold text-gray-800">嗅吸棒本體</span>
+                                <span class="text-xs text-gray-500 block">NT$ 450 / 支</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="changeCustomQty('inhaler', -1)" class="w-7 h-7 rounded-full bg-gray-200 text-gray-700 font-bold hover:bg-gray-300">-</button>
+                                <span id="inhaler-qty" class="font-bold text-[#748069] w-6 text-center">0</span>
+                                <button onclick="changeCustomQty('inhaler', 1)" class="w-7 h-7 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
                             </div>
                         </div>
 
-                        <!-- 使用說明與警語折疊 -->
-                        <details class="text-[11px] text-gray-500 mb-4 cursor-pointer">
-                            <summary class="text-amber-800 font-medium">使用方法與禁忌注意事項</summary>
-                            <div class="mt-2 space-y-1.5 bg-amber-50/60 p-2.5 rounded border border-amber-200/60 text-amber-900 leading-relaxed">
-                                <p><strong>單支嗅吸棒：</strong>旋開櫸木外蓋，將出氣孔置於左右鼻孔前 2–3 公分處自然呼吸；使用完畢請務必旋緊外蓋以防精油揮發。</p>
-                                <p><strong>嗅吸棒套組：</strong>旋開外蓋滴入 10 滴精油於棉棒，將出氣孔置於鼻前 2–3 公分處自然呼吸；使用完畢請務必旋緊外蓋。</p>
-                                <p class="text-red-700 font-semibold pt-1">⚠️ 本品含有歐薄荷與迷迭香精油：孕婦、哺乳期婦女、6歲以下幼童、癲癇患者及蠶豆症（G6PD缺乏症）患者請勿使用。僅供擴香嗅吸使用，請勿直接接觸黏膜或眼周；如有不適請立即停止使用。</p>
+                        <!-- 獨立加購區塊 -->
+                        <div class="space-y-3 bg-[#fdfcf8] p-3 rounded-lg border border-gray-200 text-xs mb-4">
+                            <div class="font-bold text-gray-700">專屬加購選項：</div>
+                            
+                            <!-- 1. 加購 5ml 複方精油 -->
+                            <div class="flex items-center justify-between pt-1">
+                                <div>
+                                    <div class="font-medium text-gray-800">加購 5ml 複方精油</div>
+                                    <div class="text-[11px] text-gray-500">NT$ 680 / 瓶 (原價 $880)</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="changeCustomQty('inhaler-add-oil', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
+                                    <span id="inhaler-add-oil-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
+                                    <button onclick="changeCustomQty('inhaler-add-oil', 1)" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                </div>
                             </div>
-                        </details>
-                    </div>
+                            <div id="inhaler-oil-scent-box" class="hidden pl-1 pb-1">
+                                <label class="block text-[11px] text-gray-500 mb-1">加購精油香氣：</label>
+                                <select id="inhaler-add-oil-scent" class="w-full border border-gray-300 rounded p-1 text-xs outline-none">
+                                    <option value="森 Forest">森 Forest (甜橙/歐薄荷/迷迭香/檜木)</option>
+                                    <option value="煦 Glow">煦 Glow (甜橙/白玉蘭葉/紅桔/岩蘭草)</option>
+                                    <option value="息 Rest">息 Rest (佛手柑/真正薰衣草/穗甘松)</option>
+                                </select>
+                            </div>
 
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-sm font-medium text-gray-600">購買數量</span>
-                        <div class="flex items-center gap-3">
-                            <button onclick="changeCustomQty('inhaler', -1)" class="w-7 h-7 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
-                            <span id="inhaler-qty" class="font-bold text-[#748069] w-6 text-center">0</span>
-                            <button onclick="changeCustomQty('inhaler', 1)" class="w-7 h-7 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                            <!-- 2. 加購客製刻字 -->
+                            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                                <div>
+                                    <div class="font-medium text-gray-800">加購客製刻字服務</div>
+                                    <div class="text-[11px] text-gray-500">NT$ 100 / 支 (限10字母)</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="changeCustomQty('inhaler-add-engrave', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
+                                    <span id="inhaler-add-engrave-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
+                                    <button onclick="changeCustomQty('inhaler-add-engrave', 1)" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                </div>
+                            </div>
+                            <div id="inhaler-engrave-box" class="hidden pl-1">
+                                <input type="text" id="inhaler-engrave-text" placeholder="欲刻文字 (若多支請用逗號隔開，各限10英文字母)" 
+                                       class="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#748069] outline-none">
+                                <span class="text-[10px] text-gray-400">下單後亦可於官方 LINE 核對各支欲刻字樣</span>
+                            </div>
+                        </div>
+
+                        <!-- 使用方法直接列出 -->
+                        <div class="space-y-2 bg-gray-50/80 p-3 rounded-lg border border-gray-200/60 text-xs text-gray-600 mb-4 leading-relaxed">
+                            <p class="font-bold text-gray-800">使用方法與保存：</p>
+                            <p><strong>・單支嗅吸棒：</strong>旋開櫸木外蓋，將出氣孔輪流置於左右鼻孔前 2–3 公分處自然呼吸；使用完畢請務必旋緊外蓋以防精油揮發。</p>
+                            <p><strong>・嗅吸棒套組：</strong>旋開外蓋滴入 10 滴精油於棉棒，將出氣孔置於鼻前 2–3 公分處自然呼吸；使用完畢請務必旋緊外蓋以防精油揮發。</p>
+                            <p><strong>・保存方式：</strong>請旋緊木蓋，置於陰涼乾燥處，避免陽光直射與高溫環境。</p>
+
+                            <!-- 僅在選擇「森」時出現的禁忌事項 -->
+                            <div id="inhaler-forest-warning" class="mt-2 pt-2 border-t border-amber-200 text-amber-900 bg-amber-50/80 p-2 rounded">
+                                <p class="text-red-700 font-bold mb-1">⚠️「森 Forest」禁忌注意事項：</p>
+                                <p>本配方含有歐薄荷與迷迭香精油。孕婦、哺乳期婦女、6歲以下幼童、癲癇患者及蠶豆症（G6PD缺乏症）患者請勿使用。</p>
+                                <p class="mt-1">僅供擴香嗅吸使用，請勿直接接觸黏膜或眼周；使用後如有頭暈、噁心等不適，請立即停止使用。</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 2. 車用擴香 -->
+                <!-- 2. 精油香氛車用擴香 -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
-                        <!-- 圖片展示與縮圖切換 -->
-                        <div class="w-full h-52 bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
+                        <!-- 正方形圖片展示與縮圖切換 (aspect-square) -->
+                        <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
                             <img id="car-main-img" src="./images/Car01.png" alt="車用擴香套組" class="w-full h-full object-cover transition-opacity duration-200">
                         </div>
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             <button type="button" onclick="switchImg('car-main-img', './images/Car01.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
-                                <img src="./images/Car01.png" class="w-full h-12 object-cover rounded" alt="套組/文字">
-                                <span class="text-[10px] block text-center text-gray-500 mt-0.5">套組/文字</span>
+                                <div class="w-full aspect-square overflow-hidden rounded">
+                                    <img src="./images/Car01.png" class="w-full h-full object-cover" alt="套組/文字">
+                                </div>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">套組/文字</span>
                             </button>
                             <button type="button" onclick="switchImg('car-main-img', './images/Car02.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
-                                <img src="./images/Car02.png" class="w-full h-12 object-cover rounded" alt="車夾展示">
-                                <span class="text-[10px] block text-center text-gray-500 mt-0.5">情境展示</span>
+                                <div class="w-full aspect-square overflow-hidden rounded">
+                                    <img src="./images/Car02.png" class="w-full h-full object-cover" alt="車夾展示">
+                                </div>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">情境展示</span>
                             </button>
                             <button type="button" onclick="switchImg('car-main-img', './images/Car03.png')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
-                                <img src="./images/Car03.png" class="w-full h-12 object-cover rounded" alt="線稿客製">
-                                <span class="text-[10px] block text-center text-gray-500 mt-0.5">圖案刻印</span>
+                                <div class="w-full aspect-square overflow-hidden rounded">
+                                    <img src="./images/Car03.png" class="w-full h-full object-cover" alt="線稿客製">
+                                </div>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">圖案刻印</span>
                             </button>
                         </div>
 
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-xl font-bold text-gray-800">車用香氛系列</h3>
-                            <span class="text-xs bg-[#748069]/10 text-[#748069] px-2 py-0.5 rounded font-medium">氣味：煦 Glow</span>
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="text-xl font-bold text-gray-800">精油香氛車用擴香</h3>
                         </div>
-                        <p class="text-xs text-gray-500 mb-4">鋅合金擴香夾 / PE擴香片 (單片1.25ml)｜持香約 7-14 天</p>
+                        <p class="text-xs text-gray-500 mb-4">金屬擴香夾 + 精油香氛擴香片｜單片持香約 7-14 天</p>
                         
+                        <!-- 香氣選擇下拉選單 -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">香氣選擇：</label>
+                            <select id="car-scent" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:border-[#748069] outline-none">
+                                <option value="煦 Glow (甜橙/白玉蘭葉/紅桔/岩蘭草)">煦 Glow（甜橙/白玉蘭葉/紅桔/岩蘭草）</option>
+                                <option value="森 Forest (甜橙/歐薄荷/絲柏/迷迭香/檜木)">森 Forest（甜橙/歐薄荷/迷迭香/檜木）</option>
+                                <option value="息 Rest (佛手柑/真正薰衣草/穗甘松)">息 Rest（佛手柑/真正薰衣草/穗甘松）</option>
+                            </select>
+                        </div>
+
                         <!-- 品項挑選 -->
                         <div class="space-y-3 mb-4">
                             <div class="flex justify-between items-center bg-[#fdfcf8] p-3 rounded-lg border border-gray-100">
                                 <div>
                                     <div class="text-sm font-bold text-gray-800">車用擴香套組</div>
-                                    <div class="text-xs text-gray-500">夾具 1 入 + 擴香片 4 片</div>
+                                    <div class="text-xs text-gray-500">夾具 1 入 + 密封擴香片 4 片</div>
                                     <div class="text-sm font-bold text-[#748069] mt-1">NT$ 980</div>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -186,7 +238,7 @@
                             <div class="flex justify-between items-center bg-[#fdfcf8] p-3 rounded-lg border border-gray-100">
                                 <div>
                                     <div class="text-sm font-bold text-gray-800">季度擴香片補充組</div>
-                                    <div class="text-xs text-gray-500">密封擴香片 4 片組</div>
+                                    <div class="text-xs text-gray-500">密封擴香片 12 片組</div>
                                     <div class="text-sm font-bold text-[#748069] mt-1">NT$ 980</div>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -197,63 +249,81 @@
                             </div>
                         </div>
 
-                        <!-- 車用專屬客製刻印加購 -->
-                        <div class="space-y-2 bg-[#fdfcf8] p-3 rounded-lg border border-gray-100 text-xs mb-4">
-                            <div class="font-bold text-gray-700 mb-1">車用擴香夾刻印加購：</div>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" id="car-add-text" onchange="toggleCarTextEngrave()" class="accent-[#748069] w-4 h-4">
-                                <span>客製刻字 (文字限 8 個英文字母) (+NT$ 100)</span>
-                            </label>
-                            <div id="car-text-box" class="hidden pl-6">
-                                <input type="text" id="car-engrave-text" maxlength="8" placeholder="欲刻英文字母 (最多8字)" 
+                        <!-- 車用專屬獨立刻印加購區塊 -->
+                        <div class="space-y-3 bg-[#fdfcf8] p-3 rounded-lg border border-gray-200 text-xs mb-4">
+                            <div class="font-bold text-gray-700">車用擴香夾刻印服務：</div>
+                            
+                            <!-- 1. 姓名刻字 (限8字母) -->
+                            <div class="flex items-center justify-between pt-1">
+                                <div>
+                                    <div class="font-medium text-gray-800">姓名刻字 (不超過8個字母)</div>
+                                    <div class="text-[11px] text-gray-500">NT$ 100 / 次</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="changeCustomQty('car-add-text', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
+                                    <span id="car-add-text-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
+                                    <button onclick="changeCustomQty('car-add-text', 1)" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                </div>
+                            </div>
+                            <div id="car-text-box" class="hidden pl-1">
+                                <input type="text" id="car-engrave-text" placeholder="欲刻姓名英文字母 (最多8字，多個請用逗號)" 
                                        class="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#748069] outline-none">
                             </div>
 
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" id="car-add-pattern" onchange="toggleCarPattern()" class="accent-[#748069] w-4 h-4">
-                                <span>客製圖案 (需提供清楚線稿) (+NT$ 200)</span>
-                            </label>
-                            <p class="text-[11px] text-gray-400 pl-6 leading-tight">加購圖案請於 LINE 傳送黑白清晰線稿以供評估製作。</p>
+                            <!-- 2. 客製圖案 (線稿) -->
+                            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                                <div>
+                                    <div class="font-medium text-gray-800">客製圖案 (需自備黑白線稿)</div>
+                                    <div class="text-[11px] text-gray-500">NT$ 200 / 次</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="changeCustomQty('car-add-pattern', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
+                                    <span id="car-add-pattern-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
+                                    <button onclick="changeCustomQty('car-add-pattern', 1)" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-gray-400 pl-1 leading-tight">客製圖案請於下單後至官方 LINE 傳送清晰黑白線稿以供製作評估。</p>
                         </div>
 
-                        <!-- 詳細資訊折疊 -->
-                        <details class="text-[11px] text-gray-500 mb-2 cursor-pointer">
-                            <summary class="text-gray-600 font-medium">使用方法、成分與製造資訊</summary>
-                            <div class="mt-2 text-gray-600 bg-gray-50 p-2.5 rounded space-y-1 leading-relaxed">
-                                <p><strong>使用方法：</strong>撕開鋁箔袋取出擴香片置入擴香夾內，固定於汽車出風口。單片香氣可持續約 7 至 14 天。</p>
-                                <p><strong>香氛成分：</strong>甜橙精油、紅桔精油、白玉蘭葉精油、岩蘭草精油、Hedione、擴香基劑。</p>
-                                <p><strong>注意事項：</strong>僅供車內擴香，嚴禁吞食；擴香片請置於孩童與寵物無法觸及處並避免接觸車內內裝表面。孕婦、6歲以下幼童、癲癇及蠶豆症患者請諮詢醫生。</p>
-                                <p class="text-[10px] text-gray-400 pt-1">製造商：曉草十一號工作室｜桃園市龍潭區中興路63巷11號｜034096189｜產地：台灣</p>
-                            </div>
-                        </details>
+                        <!-- 使用說明與規格 -->
+                        <div class="space-y-1.5 bg-gray-50/80 p-3 rounded-lg border border-gray-200/60 text-xs text-gray-600 mb-4 leading-relaxed">
+                            <p class="font-bold text-gray-800">使用方法與規格說明：</p>
+                            <p><strong>・主要材質：</strong>鋅合金夾具 / 聚乙烯 PE 密封擴香片（單片含香氛 1.25 ml）。</p>
+                            <p><strong>・使用方法：</strong>撕開鋁箔袋取出擴香片置入擴香夾內，固定於汽車出風口。單片香氣約可持續 7 至 14 天，香氣減弱後請拆封新片更換。</p>
+                            <p><strong>・保存方式：</strong>未使用的擴香片請保持鋁箔袋密封，並置於室內陰涼乾燥處，避免高溫與陽光直射（勿長期存放於日曬後的車內）。</p>
+                            <p><strong>・注意事項：</strong>僅供車內擴香，嚴禁吞食；擴香片請置於孩童與寵物無法觸及處並避免接觸車內內裝表面。孕婦、6歲以下幼童、癲癇及蠶豆症患者請諮詢醫生；如有不適請立即停止使用並通風。</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 3. 5ml 複方精油 -->
+                <!-- 3. 複方純精油 -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
-                        <!-- 圖片展示 -->
-                        <div class="w-full h-52 bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-100">
-                            <img src="./images/BEO01.png" alt="5ml 複方精油" class="w-full h-full object-cover">
+                        <!-- 正方形圖片展示 (aspect-square) -->
+                        <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-100">
+                            <img src="./images/BEO01.png" alt="複方純精油" class="w-full h-full object-cover">
                         </div>
 
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-xl font-bold text-gray-800">5ml 複方擴香純精油</h3>
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="text-xl font-bold text-gray-800">複方純精油</h3>
                             <span class="text-[#748069] font-bold text-lg">NT$ 880</span>
                         </div>
-                        <p class="text-xs text-gray-500 mb-4">專屬香氣調製｜適用水氧機、擴香石、香氛儀與嗅吸棒補充</p>
+                        <p class="text-xs text-gray-500 mb-4">容量：5ml｜適用水氧機、擴香石、香氛儀與嗅吸棒補充</p>
 
+                        <!-- 香氣選擇 -->
                         <div class="mb-4">
-                            <label class="block text-xs font-bold text-gray-700 mb-1">選擇複方香氣：</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">香氣選擇：</label>
                             <select id="blend-scent" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:border-[#748069] outline-none">
                                 <option value="森 Forest (甜橙/歐薄荷/絲柏/迷迭香/檜木)">森 Forest（甜橙/歐薄荷/迷迭香/檜木）</option>
                                 <option value="煦 Glow (甜橙/白玉蘭葉/紅桔/岩蘭草)">煦 Glow（甜橙/白玉蘭葉/紅桔/岩蘭草）</option>
+                                <option value="息 Rest (佛手柑/真正薰衣草/穗甘松)">息 Rest（佛手柑/真正薰衣草/穗甘松）</option>
                             </select>
                         </div>
 
-                        <div class="p-3 bg-[#fdfcf8] rounded-lg border border-gray-100 text-xs text-gray-600 space-y-2 mb-4">
-                            <p><strong>【森 Forest】：</strong>甜橙、歐薄荷、絲柏、桉油醇迷迭香、檜木。森林清爽提振感。</p>
-                            <p><strong>【煦 Glow】：</strong>甜橙、白玉蘭葉、紅桔、岩蘭草。舒緩暖陽微甜氣息。</p>
+                        <div class="p-3 bg-[#fdfcf8] rounded-lg border border-gray-100 text-xs text-gray-600 space-y-2 mb-4 leading-relaxed">
+                            <p><strong>【森 Forest】：</strong>甜橙、歐薄荷、絲柏、桉油醇迷迭香、檜木。綠意清爽森林感，提振思緒與深層呼吸。</p>
+                            <p><strong>【煦 Glow】：</strong>甜橙、白玉蘭葉、紅桔、岩蘭草。暖陽般微甜花葉木質層次，溫潤舒緩。</p>
+                            <p><strong>【息 Rest】：</strong>佛手柑、真正薰衣草、穗甘松。深層沉靜的安撫氣息，撫平焦躁、靜心安眠。</p>
                         </div>
                     </div>
 
@@ -279,16 +349,13 @@
                 <span class="text-xs text-gray-500 mt-1 sm:mt-0">點擊加減號即可即時計入購物車</span>
             </div>
 
-            <div id="single-oil-container" class="space-y-8">
-                <!-- 由 JavaScript 自動注入單方精油列表 -->
-            </div>
+            <div id="single-oil-container" class="space-y-8"></div>
         </section>
     </main>
 
     <!-- 底部常駐購物車 -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#748069] text-white border-t-4 border-[#f1cf71] shadow-2xl p-4 z-40">
         <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <!-- 金額資訊 -->
             <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6 text-sm md:text-base">
                 <div>已選數量：<span id="cart-total-qty" class="font-bold text-xl text-[#f1cf71]">0</span> 件</div>
                 <div>商品小計：<span class="font-bold text-lg text-white">NT$ <span id="cart-subtotal">0</span></span></div>
@@ -297,7 +364,6 @@
                 </div>
             </div>
 
-            <!-- 操作按鈕 -->
             <div class="flex items-center gap-3 w-full md:w-auto justify-center md:justify-end">
                 <button onclick="clearAllCart()" class="text-xs text-gray-300 hover:text-white underline mr-1">
                     清除
@@ -340,7 +406,6 @@
     </div>
 
     <script>
-        // 單方精油原始資料
         const singleOilsData = [
             { category: '果實種子 (Fruits & Seeds)', items: [
                 { name: '甜橙', en: 'Sweet Orange', sci: 'Citrus sinensis', price: 180 },
@@ -404,16 +469,22 @@
             ]}
         ];
 
+        // 獨立計數資料庫
         let customItems = {
             'inhaler': 0,
+            'inhaler-add-oil': 0,
+            'inhaler-add-engrave': 0,
             'car-set': 0,
             'car-refill': 0,
+            'car-add-text': 0,
+            'car-add-pattern': 0,
             'blend': 0
         };
         let singleOilsCart = {};
 
         window.onload = function() {
             renderSingleOils();
+            onInhalerScentChange();
             calculateCart();
         };
 
@@ -424,6 +495,16 @@
                 img.src = src;
                 img.style.opacity = '1';
             }, 150);
+        }
+
+        function onInhalerScentChange() {
+            const scentVal = document.getElementById('inhaler-scent').value;
+            const warningEl = document.getElementById('inhaler-forest-warning');
+            if (scentVal.includes('森 Forest')) {
+                warningEl.classList.remove('hidden');
+            } else {
+                warningEl.classList.add('hidden');
+            }
         }
 
         function renderSingleOils() {
@@ -486,45 +567,50 @@
             });
         }
 
-        function onInhalerOilChange() {
-            const hasOil = document.getElementById('inhaler-add-oil').checked;
-            if (hasOil) {
-                switchImg('inhaler-main-img', './images/SM02.png');
-            } else {
-                switchImg('inhaler-main-img', './images/SM01.png');
-            }
-            calculateCart();
-        }
-
-        function toggleInhalerEngrave() {
-            const checked = document.getElementById('inhaler-add-engrave').checked;
-            document.getElementById('inhaler-engrave-box').classList.toggle('hidden', !checked);
-            if (checked) {
-                switchImg('inhaler-main-img', './images/SM03.png');
-            }
-            calculateCart();
-        }
-
-        function toggleCarTextEngrave() {
-            const checked = document.getElementById('car-add-text').checked;
-            document.getElementById('car-text-box').classList.toggle('hidden', !checked);
-            if (checked) {
-                switchImg('car-main-img', './images/Car01.png');
-            }
-            calculateCart();
-        }
-
-        function toggleCarPattern() {
-            const checked = document.getElementById('car-add-pattern').checked;
-            if (checked) {
-                switchImg('car-main-img', './images/Car03.png');
-            }
-            calculateCart();
-        }
-
         function changeCustomQty(key, delta) {
             customItems[key] = Math.max(0, (customItems[key] || 0) + delta);
-            document.getElementById(`${key}-qty`).innerText = customItems[key];
+            const el = document.getElementById(`${key}-qty`);
+            if (el) el.innerText = customItems[key];
+
+            // 條件展開輸入框與圖片連動
+            if (key === 'inhaler-add-oil') {
+                const box = document.getElementById('inhaler-oil-scent-box');
+                if (customItems[key] > 0) {
+                    box.classList.remove('hidden');
+                    switchImg('inhaler-main-img', './images/SM02.png');
+                } else {
+                    box.classList.add('hidden');
+                    if (customItems['inhaler-add-engrave'] === 0) switchImg('inhaler-main-img', './images/SM01.png');
+                }
+            }
+
+            if (key === 'inhaler-add-engrave') {
+                const box = document.getElementById('inhaler-engrave-box');
+                if (customItems[key] > 0) {
+                    box.classList.remove('hidden');
+                    switchImg('inhaler-main-img', './images/SM03.png');
+                } else {
+                    box.classList.add('hidden');
+                    if (customItems['inhaler-add-oil'] === 0) switchImg('inhaler-main-img', './images/SM01.png');
+                }
+            }
+
+            if (key === 'car-add-text') {
+                const box = document.getElementById('car-text-box');
+                if (customItems[key] > 0) {
+                    box.classList.remove('hidden');
+                    switchImg('car-main-img', './images/Car01.png');
+                } else {
+                    box.classList.add('hidden');
+                }
+            }
+
+            if (key === 'car-add-pattern') {
+                if (customItems[key] > 0) {
+                    switchImg('car-main-img', './images/Car03.png');
+                }
+            }
+
             calculateCart();
         }
 
@@ -538,24 +624,25 @@
 
         function clearAllCart() {
             if (confirm('確定要清除目前已選的所有商品嗎？')) {
-                customItems = { 'inhaler': 0, 'car-set': 0, 'car-refill': 0, 'blend': 0 };
-                ['inhaler', 'car-set', 'car-refill', 'blend'].forEach(k => {
+                for (let k in customItems) {
+                    customItems[k] = 0;
                     const el = document.getElementById(`${k}-qty`);
                     if (el) el.innerText = '0';
-                });
+                }
                 for (let id in singleOilsCart) {
                     const el = document.getElementById(`qty-${id}`);
                     if (el) el.innerText = '0';
                 }
                 singleOilsCart = {};
-                document.getElementById('inhaler-add-oil').checked = false;
-                document.getElementById('inhaler-add-engrave').checked = false;
+
+                document.getElementById('inhaler-oil-scent-box').classList.add('hidden');
+                document.getElementById('inhaler-engrave-box').classList.add('hidden');
                 document.getElementById('inhaler-engrave-text').value = '';
-                document.getElementById('car-add-text').checked = false;
-                document.getElementById('car-add-pattern').checked = false;
+                document.getElementById('car-text-box').classList.add('hidden');
                 document.getElementById('car-engrave-text').value = '';
-                toggleInhalerEngrave();
-                toggleCarTextEngrave();
+
+                switchImg('inhaler-main-img', './images/SM01.png');
+                switchImg('car-main-img', './images/Car01.png');
                 calculateCart();
             }
         }
@@ -565,57 +652,80 @@
             let totalQty = 0;
             let subtotal = 0;
 
-            // 1. 嗅吸棒
+            // 1. 嗅吸棒本體
             if (customItems['inhaler'] > 0) {
                 const qty = customItems['inhaler'];
                 const scent = document.getElementById('inhaler-scent').value;
-                const hasOil = document.getElementById('inhaler-add-oil').checked;
-                const hasEngrave = document.getElementById('inhaler-add-engrave').checked;
-                const engraveText = document.getElementById('inhaler-engrave-text').value.trim();
-
-                let unitPrice = 450;
-                let desc = `純精油嗅吸棒 x ${qty} (氣味: ${scent})`;
-                if (hasOil) { unitPrice += 680; desc += ' +加購5ml精油'; }
-                if (hasEngrave) { unitPrice += 100; desc += ` +客製刻字[${engraveText || '待LINE確認'}]`; }
-
-                const itemTotal = unitPrice * qty;
-                items.push({ name: desc, price: unitPrice, qty: qty, total: itemTotal });
-                totalQty += qty;
-                subtotal += itemTotal;
-            }
-
-            // 2. 車用擴香套組與補充片
-            if (customItems['car-set'] > 0) {
-                const qty = customItems['car-set'];
-                const hasText = document.getElementById('car-add-text').checked;
-                const hasPattern = document.getElementById('car-add-pattern').checked;
-                const engraveText = document.getElementById('car-engrave-text').value.trim();
-
-                let unitPrice = 980;
-                let desc = `車用擴香套組 x ${qty} (氣味: 煦 Glow)`;
-                if (hasText) { unitPrice += 100; desc += ` +客製刻字[${engraveText || '待LINE提供'}]`; }
-                if (hasPattern) { unitPrice += 200; desc += ' +客製線稿圖案'; }
-
-                const itemTotal = unitPrice * qty;
-                items.push({ name: desc, price: unitPrice, qty: qty, total: itemTotal });
-                totalQty += qty;
-                subtotal += itemTotal;
-            }
-
-            if (customItems['car-refill'] > 0) {
-                const qty = customItems['car-refill'];
-                const total = 980 * qty;
-                items.push({ name: '車用擴香替換片季度組 (氣味: 煦 Glow)', price: 980, qty: qty, total: total });
+                const total = 450 * qty;
+                items.push({ name: `100% 精油櫸木嗅吸棒 (${scent})`, price: 450, qty: qty, total: total });
                 totalQty += qty;
                 subtotal += total;
             }
 
-            // 3. 5ml 複方精油
+            // 嗅吸棒加購：5ml 精油
+            if (customItems['inhaler-add-oil'] > 0) {
+                const qty = customItems['inhaler-add-oil'];
+                const scent = document.getElementById('inhaler-add-oil-scent').value;
+                const total = 680 * qty;
+                items.push({ name: `嗅吸棒加購 5ml 複方精油 (${scent})`, price: 680, qty: qty, total: total });
+                totalQty += qty;
+                subtotal += total;
+            }
+
+            // 嗅吸棒加購：客製刻字
+            if (customItems['inhaler-add-engrave'] > 0) {
+                const qty = customItems['inhaler-add-engrave'];
+                const text = document.getElementById('inhaler-engrave-text').value.trim();
+                const total = 100 * qty;
+                items.push({ name: `嗅吸棒加購客製刻字服務 [${text || '待LINE確認'}]`, price: 100, qty: qty, total: total });
+                totalQty += qty;
+                subtotal += total;
+            }
+
+            // 2. 車用擴香本體
+            if (customItems['car-set'] > 0) {
+                const qty = customItems['car-set'];
+                const carScent = document.getElementById('car-scent').value;
+                const total = 980 * qty;
+                items.push({ name: `精油香氛車用擴香套組 (${carScent})`, price: 980, qty: qty, total: total });
+                totalQty += qty;
+                subtotal += total;
+            }
+
+            if (customItems['car-refill'] > 0) {
+                const qty = customItems['car-refill'];
+                const carScent = document.getElementById('car-scent').value;
+                const total = 980 * qty;
+                items.push({ name: `車用季度擴香片補充組 12片 (${carScent})`, price: 980, qty: qty, total: total });
+                totalQty += qty;
+                subtotal += total;
+            }
+
+            // 車用擴香加購：姓名刻字
+            if (customItems['car-add-text'] > 0) {
+                const qty = customItems['car-add-text'];
+                const text = document.getElementById('car-engrave-text').value.trim();
+                const total = 100 * qty;
+                items.push({ name: `車用擴香夾姓名刻字服務 [${text || '待LINE確認'}]`, price: 100, qty: qty, total: total });
+                totalQty += qty;
+                subtotal += total;
+            }
+
+            // 車用擴香加購：客製圖案
+            if (customItems['car-add-pattern'] > 0) {
+                const qty = customItems['car-add-pattern'];
+                const total = 200 * qty;
+                items.push({ name: `車用擴香夾客製圖案 (自備線稿)`, price: 200, qty: qty, total: total });
+                totalQty += qty;
+                subtotal += total;
+            }
+
+            // 3. 複方純精油
             if (customItems['blend'] > 0) {
                 const qty = customItems['blend'];
                 const scent = document.getElementById('blend-scent').value;
                 const total = 880 * qty;
-                items.push({ name: `5ml 複方精油 (${scent})`, price: 880, qty: qty, total: total });
+                items.push({ name: `複方純精油 5ml (${scent})`, price: 880, qty: qty, total: total });
                 totalQty += qty;
                 subtotal += total;
             }
