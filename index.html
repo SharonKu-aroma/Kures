@@ -5,23 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KURES 氣味選品型錄 ｜ 專屬客製香氛與單方精油</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #fdfcf8; color: #333333; }
-        
-        /* Loading Overlay */
-        .loading-overlay { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(253, 252, 248, 0.95);
-            z-index: 99999; 
-            justify-content: center; 
-            align-items: center; 
-            flex-direction: column;
-        }
-
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #fdfcf8; }
         ::-webkit-scrollbar-thumb { background: #748069; border-radius: 4px; }
@@ -376,44 +362,43 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 w-full md:w-auto justify-center md:justify-end">
+                <div class="flex items-center gap-4 w-full md:w-auto justify-center md:justify-end">
                     <button onclick="clearAllCart()" class="text-xs text-gray-300 hover:text-white underline mr-1">
                         清除
                     </button>
-                    <button onclick="exportOrderPDF()" class="bg-[#f1cf71] hover:bg-[#e0bc5a] text-[#748069] px-4 py-2.5 rounded-lg font-bold shadow-md transition text-sm">
-                        下載訂單 PDF
-                    </button>
-                    <button onclick="copyToLine()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-lg font-bold shadow transition text-sm flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.03-.17.6-.62 2.19-.71 2.53-.11.43.16.42.34.3 1.4-1 3.23-2.15 3.55-2.38.96.26 1.95.4 2.96.4 5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
-                        <span>複製明細</span>
+                    <!-- 單一核心行動按鈕 -->
+                    <button onclick="copyToLine()" class="w-full sm:w-auto bg-[#f1cf71] hover:bg-[#e0bc5a] text-[#748069] px-6 py-2.5 rounded-lg font-bold shadow-lg transition text-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                        <span>複製明細並前往 LINE</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loading" class="loading-overlay">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#748069] mb-4"></div>
-        <p class="text-[#748069] font-bold tracking-wide text-lg">正在為您生成訂單 PDF...</p>
-        <p class="text-[#748069] opacity-80 text-sm mt-2">請稍候，系統正在處理排版</p>
-    </div>
-
-    <!-- PDF 完成後提示前往 LINE 彈窗 -->
-    <div id="line-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex justify-center items-center px-4 backdrop-blur-sm">
-        <div class="bg-white rounded-xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-t-4 border-[#748069]">
-            <div class="w-14 h-14 bg-[#748069]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-7 h-7 text-[#748069]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <!-- 複製成功提示前往 LINE 彈窗 -->
+    <div id="order-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex justify-center items-center px-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center border-t-4 border-[#748069]">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+                ✓
             </div>
-            <h3 class="text-2xl font-bold text-[#748069] mb-2">訂單 PDF 已生成！</h3>
-            <p class="text-gray-600 mb-6 text-left leading-relaxed text-sm">
-                PDF 已在新分頁為您開啟（若手機未自動彈出，請確認未被瀏覽器攔截）。<br><br>
-                請將該 <strong>訂單 PDF 檔案或截圖</strong> 傳送至官方 LINE 核對製作細節，確認無誤後即可前往賣貨便結帳完成下單。
-            </p>
-            <a href="https://lin.ee/nztXyF1" target="_blank" onclick="closeLineModal()" class="block w-full bg-[#00B900] hover:bg-[#009900] text-white font-bold py-3 px-4 rounded-md transition-colors mb-3 shadow-sm">
-                前往官方 LINE
+            <h3 class="text-xl font-bold text-gray-800 mb-2">明細已成功複製！</h3>
+            
+            <div class="text-left bg-[#fdfcf8] p-4 rounded-xl border border-gray-200 text-xs text-gray-700 space-y-2.5 mb-6 leading-relaxed">
+                <p class="font-bold text-sm text-gray-900">下一步下單流程：</p>
+                <p>1. 點擊下方按鈕前往 <strong>官方 LINE</strong>，將明細直接「貼上」傳送給我們確認客製內容。</p>
+                <p>2. 核對無誤後，請至賣貨便（1元賣場）將購買數量輸入為總額 <strong><span id="modal-total-amt" class="text-red-600 font-bold">0</span></strong> 完成結帳。</p>
+                <p class="text-[11px] text-gray-500">（若未達 2,000 元免運，未滿之運費以賣貨便為準）</p>
+                <p class="text-[11px] text-amber-800 bg-amber-50 p-2 rounded border border-amber-200">
+                    所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
+                </p>
+            </div>
+
+            <a href="https://lin.ee/nztXyF1" target="_blank" onclick="closeOrderModal()" 
+               class="block w-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold py-3 px-4 rounded-xl shadow transition mb-3">
+                前往官方 LINE 貼上明細
             </a>
-            <button onclick="closeLineModal()" class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium py-2.5 px-4 rounded-md transition-colors text-sm">
+            <button onclick="closeOrderModal()" class="w-full py-2.5 text-xs text-gray-400 hover:text-gray-600">
                 關閉
             </button>
         </div>
@@ -755,14 +740,10 @@
             if (subtotal === 0) {
                 shipEl.innerText = '滿 $2,000 免運';
             } else if (subtotal >= 2000) {
-                shipEl.innerText = '🎉 已達滿 $2,000 免運門檻！';
+                shipEl.innerText = '已達滿 $2,000 免運門檻！';
             } else {
-                shipEl.innerText = `還差 NT$ ${(2000 - subtotal).toLocaleString()} 免運 (未滿以賣貨便為準)`;
+                shipEl.innerText = `還差 NT$ ${(2000 - subtotal).toLocaleString()} 免運 (未滿之運費以賣貨便為準)`;
             }
-        }
-
-        function generateOrderId() {
-            return '#K-' + Math.floor(1000 + Math.random() * 9000);
         }
 
         function copyToLine() {
@@ -772,140 +753,27 @@
                 return;
             }
 
-            const orderId = generateOrderId();
-            let text = `🌿【KURES 氣味選品預約明細】\n`;
-            text += `🔖 訂單識別碼：${orderId}\n`;
+            let text = `【KURES 氣味選品預約明細】\n`;
             text += `---------------------------------\n`;
             items.forEach(it => {
                 text += `・${it.name}\n  單價: $${it.price.toLocaleString()} × ${it.qty} = $${it.total.toLocaleString()}\n`;
             });
             text += `---------------------------------\n`;
-            text += `💰 預估商品總額：NT$ ${subtotal.toLocaleString()} 元\n`;
-            text += `🚚 運費：${subtotal >= 2000 ? '已達滿 $2,000 免運' : '未達免運（依賣貨便運費計算）'}\n`;
-            text += `⏳ 出貨說明：所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候\n\n`;
-            text += `👉 請協助核對以上配方與刻印內容，確認無誤後我將前往賣貨便下單！`;
+            text += `預估商品總額：NT$ ${subtotal.toLocaleString()} 元\n`;
+            text += `運費：${subtotal >= 2000 ? '已達滿 $2,000 免運' : '未達免運（未滿之運費以賣貨便為準）'}\n`;
+            text += `出貨說明：所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候\n\n`;
+            text += `請協助核對以上配方與刻印內容，確認無誤後我將前往賣貨便下單！`;
 
             navigator.clipboard.writeText(text).then(() => {
-                alert('明細已複製到剪貼簿！可直接前往 LINE 貼上傳送。');
+                document.getElementById('modal-total-amt').innerText = `NT$ ${subtotal.toLocaleString()}`;
+                document.getElementById('order-modal').classList.remove('hidden');
             }).catch(err => {
                 alert('複製失敗，請手動截圖購物車內容傳送至 LINE。');
             });
         }
 
-        function closeLineModal() {
-            document.getElementById('line-modal').classList.add('hidden');
-        }
-
-        /* 輸出 PDF：手機版開新分頁展示，官網頁面維持不變並提示前往官方 LINE */
-        async function exportOrderPDF() {
-            const { items, subtotal } = getOrderDetails();
-            if (items.length === 0) {
-                alert('購物車是空的，請先挑選商品！');
-                return;
-            }
-
-            document.getElementById('loading').style.display = 'flex';
-
-            let invoiceRows = '';
-            items.forEach(it => {
-                invoiceRows += `
-                    <tr style="border-bottom: 1px solid #f1f1f1;">
-                        <td style="padding: 12px 14px; font-weight: 500; color: #333;">${it.name}</td>
-                        <td style="padding: 12px 14px; text-align: right; color: #555;">$${it.price.toLocaleString()}</td>
-                        <td style="padding: 12px 14px; text-align: right; color: #555;">${it.qty}</td>
-                        <td style="padding: 12px 14px; text-align: right; font-weight: bold; color: #333;">$${it.total.toLocaleString()}</td>
-                    </tr>
-                `;
-            });
-
-            const shipping = subtotal >= 2000 ? 0 : 60;
-            const grandTotal = subtotal + (subtotal >= 2000 ? 0 : 0);
-            const d = new Date();
-            const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-
-            const htmlString = `
-            <div style="width: 800px; padding: 50px; background: #FFFFFF; color: #333333; font-family: 'Noto Sans TC', sans-serif; box-sizing: border-box;">
-                <div style="text-align: center; margin-bottom: 35px; border-bottom: 2px solid #748069; padding-bottom: 20px;">
-                    <h1 style="font-size: 30px; font-weight: bold; letter-spacing: 2px; color: #748069; margin: 0 0 10px 0;">KURES 氣味選品型錄</h1>
-                    <p style="font-size: 16px; color: #666; margin: 0;">專屬客製香氛與單方精油 - 訂購明細單</p>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; color: #333; font-size: 15px;">
-                    <p style="margin: 0;"><strong>訂購日期：</strong> ${dateStr}</p>
-                    <p style="margin: 0;"><strong>官方 LINE：</strong> @nztXyF1</p>
-                </div>
-
-                <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 30px; font-size: 14px;">
-                    <thead>
-                        <tr style="background-color: rgba(116, 128, 105, 0.1); border-bottom: 2px solid #748069;">
-                            <th style="padding: 12px 14px; color: #748069; font-weight: bold;">選購商品項目</th>
-                            <th style="padding: 12px 14px; color: #748069; font-weight: bold; text-align: right; width: 90px;">單價</th>
-                            <th style="padding: 12px 14px; color: #748069; font-weight: bold; text-align: right; width: 60px;">數量</th>
-                            <th style="padding: 12px 14px; color: #748069; font-weight: bold; text-align: right; width: 100px;">小計</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${invoiceRows}
-                    </tbody>
-                </table>
-
-                <div style="display: flex; justify-content: flex-end; font-size: 15px;">
-                    <div style="width: 320px; text-align: right;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <span style="color: #666;">商品總計：</span>
-                            <span>NT$ ${subtotal.toLocaleString()}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <span style="color: #666;">運費門檻：</span>
-                            <span>${subtotal >= 2000 ? '已達滿 $2,000 免運' : '未達免運 (依賣貨便為準)'}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; border-top: 2px solid #f1cf71; padding-top: 12px; margin-top: 12px;">
-                            <span style="font-size: 20px; font-weight: bold; color: #748069;">預估總額：</span>
-                            <span style="font-size: 20px; font-weight: bold; color: #748069;">NT$ ${subtotal.toLocaleString()}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 50px; text-align: center; font-size: 13px; color: #748069; border-top: 1px dashed #ddd; padding-top: 20px;">
-                    <p style="margin: 0 0 6px 0; font-weight: 500;">所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候</p>
-                    <p style="margin: 0; color: #888; font-size: 12px;">感謝您的預約訂購！請將此 PDF 傳送至官方 LINE 完成客製細節核對。</p>
-                </div>
-            </div>
-            `;
-
-            const opt = {
-                margin:       [10, 10, 10, 10],
-                filename:     'KURES_Order_Sharon.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, width: 800, windowWidth: 800, x: 0, y: 0, scrollX: 0, scrollY: 0 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            window.scrollTo(0, 0);
-
-            setTimeout(async () => {
-                try {
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                    
-                    if (isMobile) {
-                        // 手機端：轉為 Blob URL 並透過 window.open 新分頁開啟
-                        const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
-                        const blobUrl = URL.createObjectURL(pdfBlob);
-                        window.open(blobUrl, '_blank');
-                    } else {
-                        // 電腦端：直接儲存下載
-                        await html2pdf().set(opt).from(htmlString).save();
-                    }
-
-                    // 原分頁保持開啟，並跳出引導視窗供客戶直接前往 LINE
-                    document.getElementById('line-modal').classList.remove('hidden');
-                } catch (err) {
-                    console.error('PDF 生成錯誤:', err);
-                    alert('PDF 產生失敗，請稍後再試。');
-                } finally {
-                    document.getElementById('loading').style.display = 'none';
-                }
-            }, 300);
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.add('hidden');
         }
     </script>
 </body>
