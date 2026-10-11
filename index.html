@@ -209,7 +209,7 @@
                         </div>
                         <p class="text-xs text-gray-500 mb-4">金屬擴香夾 + 精油香氛擴香片<br>單片持香約 7-14 天</p>
                         
-                        <!-- 香氣選擇下拉選單 -->
+                        <!-- 香氣選擇下拉選單（僅保留 煦） -->
                         <div class="mb-4">
                             <label class="block text-xs font-bold text-gray-700 mb-1">香氣選擇：</label>
                             <select id="car-scent" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:border-[#748069] outline-none">
@@ -353,9 +353,9 @@
     <!-- 底部常駐購物車 -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#748069] text-white border-t-4 border-[#f1cf71] shadow-2xl p-4 z-40">
         <div class="max-w-5xl mx-auto flex flex-col gap-2.5">
-            <!-- 製作與出貨提醒公告欄 -->
+            <!-- 製作與出貨提醒公告欄 (已移除 🙏🏻) -->
             <div class="text-xs sm:text-[13px] text-amber-200 bg-black/25 px-3 py-1.5 rounded-md text-center tracking-wide font-normal">
-                所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候 🙏🏻
+                所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
             </div>
 
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -398,7 +398,7 @@
                 <p>2. 核對無誤後，請至賣貨便（1元賣場）將購買數量輸入為總額 <strong><span id="modal-total-amt" class="text-red-600 font-bold">0</span></strong> 完成結帳。</p>
                 <p class="text-[11px] text-gray-500">（若未達 2,000 元免運，系統將於賣貨便結帳時自動計入運費）</p>
                 <p class="text-[11px] text-amber-800 bg-amber-50 p-2 rounded border border-amber-200">
-                    💡 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候 🙏🏻
+                    💡 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
                 </p>
             </div>
 
@@ -438,7 +438,7 @@
                 { name: '芳枸葉', en: 'Fragonia', sci: 'Agonis fragran', price: 980 },
                 { name: '桉油醇迷迭香', en: 'Rosemary', sci: 'Salvia rosmarinus CT cineole', price: 280 },
                 { name: '檸檬尤加利', en: 'Lemon Eucalyptus', sci: 'Eucalyptus citriodora', price: 180 },
-                { name: '甜馬鬱蘭', en: 'Sweet 馬鬱蘭', sci: 'Origanum majorana', price: 380 },
+                { name: '甜馬鬱蘭', en: 'Sweet Marjoram', sci: 'Origanum majorana', price: 380 },
                 { name: '廣藿香', en: 'Patchouli', sci: 'Pogostemon cablin', price: 480 },
                 { name: '百里酚百里香', en: 'Thyme Thymol', sci: 'Thymus vulgaris', price: 480 },
                 { name: '肉桂葉', en: 'Cinnamon leaf', sci: 'Cinnamomum Zylanicum', price: 280 }
@@ -775,7 +775,7 @@
             text += `---------------------------------\n`;
             text += `💰 預估商品總額：NT$ ${subtotal.toLocaleString()} 元\n`;
             text += `🚚 運費：${subtotal >= 2000 ? '已達滿 $2,000 免運' : '未達免運（依賣貨便運費計算）'}\n`;
-            text += `⏳ 出貨說明：所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候 🙏🏻\n\n`;
+            text += `⏳ 出貨說明：所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候\n\n`;
             text += `👉 請協助核對以上配方與刻印內容，確認無誤後我將前往賣貨便下單！`;
 
             navigator.clipboard.writeText(text).then(() => {
@@ -791,7 +791,7 @@
             document.getElementById('order-modal').classList.add('hidden');
         }
 
-        function exportOrderPDF() {
+        async function exportOrderPDF() {
             const { items, subtotal } = getOrderDetails();
             if (items.length === 0) {
                 alert('購物車是空的，請先挑選商品！');
@@ -810,25 +810,23 @@
                 `;
             });
 
+            // 建立獨立暫存節點，置於視窗外部但能被完整繪製的位置
             const pdfContainer = document.createElement('div');
-            pdfContainer.id = 'temp-pdf-render-box';
-            pdfContainer.style.position = 'fixed';
+            pdfContainer.style.position = 'absolute';
+            pdfContainer.style.top = '-99999px';
             pdfContainer.style.left = '0';
-            pdfContainer.style.top = '0';
             pdfContainer.style.width = '750px';
             pdfContainer.style.backgroundColor = '#ffffff';
-            pdfContainer.style.zIndex = '-9999';
-            pdfContainer.style.opacity = '1';
-            pdfContainer.style.padding = '40px';
+            pdfContainer.style.padding = '30px';
             pdfContainer.style.boxSizing = 'border-box';
             pdfContainer.style.fontFamily = "'Noto Sans TC', sans-serif";
 
             pdfContainer.innerHTML = `
-                <div style="text-align: center; margin-bottom: 25px;">
+                <div style="text-align: center; margin-bottom: 20px;">
                     <h2 style="color: #748069; font-size: 22px; font-weight: bold; margin: 0 0 6px 0;">KURES 氣味選品明細單</h2>
                     <p style="color: #777; font-size: 13px; margin: 0;">官方 LINE: @nztXyF1</p>
                 </div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 25px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
                     <thead>
                         <tr style="background-color: #f4f6f2; border-bottom: 2px solid #748069; color: #748069;">
                             <th style="padding: 10px 12px; text-align: left; font-weight: bold;">商品品項</th>
@@ -843,7 +841,7 @@
                     <p style="margin: 4px 0; font-size: 16px; color: #333;"><strong>商品總計：NT$ ${subtotal.toLocaleString()}</strong></p>
                     <p style="font-size: 12px; color: #777; margin: 4px 0;">(滿 NT$ 2,000 免運，未滿以賣貨便為準)</p>
                     <p style="font-size: 12px; color: #748069; margin: 8px 0 0 0; text-align: center; padding-top: 10px; border-top: 1px dashed #e0e0e0;">
-                        🌿 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候 🙏🏻
+                        🌿 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
                     </p>
                 </div>
             `;
@@ -857,23 +855,43 @@
                 html2canvas: {
                     scale: 2,
                     useCORS: true,
-                    logging: false,
-                    width: 750
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: 800
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            html2pdf().set(opt).from(pdfContainer).save().then(() => {
+            try {
+                const pdfWorker = html2pdf().set(opt).from(pdfContainer);
+                const pdfBlob = await pdfWorker.output('blob');
+
                 if (document.body.contains(pdfContainer)) {
                     document.body.removeChild(pdfContainer);
                 }
-            }).catch(err => {
-                console.error('PDF 導出失敗:', err);
+
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+                if (isMobile) {
+                    window.open(blobUrl, '_blank');
+                } else {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = blobUrl;
+                    downloadLink.download = 'KURES_Order_List.pdf';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                }
+
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            } catch (err) {
+                console.error('PDF 產生失敗:', err);
                 if (document.body.contains(pdfContainer)) {
                     document.body.removeChild(pdfContainer);
                 }
-                alert('PDF 產生失敗，請稍後再試或使用螢幕截圖。');
-            });
+                alert('PDF 產生異常，請稍候重試或使用截圖傳送。');
+            }
         }
     </script>
 </body>
