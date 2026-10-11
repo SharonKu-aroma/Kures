@@ -17,7 +17,7 @@
         .product-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -4px rgba(116, 128, 105, 0.15); }
     </style>
 </head>
-<body class="pb-44">
+<body class="pb-48">
 
     <!-- 頂部品牌主視覺 Banner -->
     <div class="w-full bg-[#fdfcf8] overflow-hidden border-b border-[#748069]/20">
@@ -92,7 +92,8 @@
                         </div>
                         <p class="text-xs text-gray-500 mb-4">材質：天然櫸木、專用棉芯、複方精油</p>
 
-                        <!-- 香氣選擇 -->                        <div class="mb-4">
+                        <!-- 香氣選擇 -->
+                        <div class="mb-4">
                             <label class="block text-xs font-bold text-gray-700 mb-1">嗅吸棒香氣選擇：</label>
                             <select id="inhaler-scent" onchange="onInhalerScentChange()" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:border-[#748069] outline-none">
                                 <option value="森 Forest (甜橙/歐薄荷/絲柏/迷迭香/檜木)">森 Forest（甜橙/歐薄荷/迷迭香/檜木）</option>
@@ -154,7 +155,7 @@
                             <div id="inhaler-engrave-box" class="hidden pl-1">
                                 <input type="text" id="inhaler-engrave-text" placeholder="欲刻文字 (若多支請用逗號隔開，每支限10個英文字母)" 
                                        class="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#748069] outline-none">
-                                <span class="text-[10px] text-gray-400">下單後請製官方 LINE 核對商品客製內容</span>
+                                <span class="text-[10px] text-gray-400">下單後請至官方 LINE 核對商品客製內容</span>
                             </div>
                         </div>
 
@@ -213,8 +214,6 @@
                             <label class="block text-xs font-bold text-gray-700 mb-1">香氣選擇：</label>
                             <select id="car-scent" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:border-[#748069] outline-none">
                                 <option value="煦 Glow (甜橙/白玉蘭葉/紅桔/岩蘭草)">煦 Glow（甜橙/白玉蘭葉/紅桔/岩蘭草）</option>
-                                <option value="森 Forest (甜橙/歐薄荷/絲柏/迷迭香/檜木)">森 Forest（甜橙/歐薄荷/迷迭香/檜木）</option>
-                                <option value="息 Rest (佛手柑/真正薰衣草/穗甘松)">息 Rest（佛手柑/真正薰衣草/穗甘松）</option>
                             </select>
                         </div>
 
@@ -338,11 +337,11 @@
             </div>
         </section>
 
-        <!-- 區塊 2：HOKI 單方精油 5ml -->
+        <!-- 區塊 2：Sharon 嚴選 HOKI 單方精油 5ml -->
         <section>
             <div class="flex flex-col sm:flex-row justify-between sm:items-end mb-6 border-b-2 border-[#f1cf71] pb-2">
                 <h2 class="text-2xl font-bold text-[#748069]">
-                    HOKI 嚴選單方精油 (5ml)
+                    Sharon 嚴選 HOKI 單方精油 (5ml)
                 </h2>
                 <span class="text-xs text-gray-500 mt-1 sm:mt-0">點擊加減號即可即時計入購物車</span>
             </div>
@@ -353,26 +352,33 @@
 
     <!-- 底部常駐購物車 -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#748069] text-white border-t-4 border-[#f1cf71] shadow-2xl p-4 z-40">
-        <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6 text-sm md:text-base">
-                <div>已選數量：<span id="cart-total-qty" class="font-bold text-xl text-[#f1cf71]">0</span> 件</div>
-                <div>商品小計：<span class="font-bold text-lg text-white">NT$ <span id="cart-subtotal">0</span></span></div>
-                <div class="text-xs md:text-sm bg-black/20 px-3 py-1 rounded-full">
-                    <span id="shipping-status">滿 $2,000 免運</span>
-                </div>
+        <div class="max-w-5xl mx-auto flex flex-col gap-2.5">
+            <!-- 製作與出貨提醒公告欄 -->
+            <div class="text-xs sm:text-[13px] text-amber-200 bg-black/25 px-3 py-1.5 rounded-md text-center tracking-wide font-normal">
+                所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候 🙏🏻
             </div>
 
-            <div class="flex items-center gap-3 w-full md:w-auto justify-center md:justify-end">
-                <button onclick="clearAllCart()" class="text-xs text-gray-300 hover:text-white underline mr-1">
-                    清除
-                </button>
-                <button onclick="exportOrderPDF()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-2.5 rounded-lg text-sm font-medium transition">
-                    下載 PDF
-                </button>
-                <button onclick="copyToLine()" class="bg-[#f1cf71] hover:bg-[#e2bd5b] text-[#748069] px-5 py-2.5 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.03-.17.6-.62 2.19-.71 2.53-.11.43.16.42.34.3 1.4-1 3.23-2.15 3.55-2.38.96.26 1.95.4 2.96.4 5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
-                    <span>複製明細並前往 LINE</span>
-                </button>
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6 text-sm md:text-base">
+                    <div>已選數量：<span id="cart-total-qty" class="font-bold text-xl text-[#f1cf71]">0</span> 件</div>
+                    <div>商品小計：<span class="font-bold text-lg text-white">NT$ <span id="cart-subtotal">0</span></span></div>
+                    <div class="text-xs md:text-sm bg-black/20 px-3 py-1 rounded-full">
+                        <span id="shipping-status">滿 $2,000 免運</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 w-full md:w-auto justify-center md:justify-end">
+                    <button onclick="clearAllCart()" class="text-xs text-gray-300 hover:text-white underline mr-1">
+                        清除
+                    </button>
+                    <button onclick="exportOrderPDF()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-2.5 rounded-lg text-sm font-medium transition">
+                        下載 PDF
+                    </button>
+                    <button onclick="copyToLine()" class="bg-[#f1cf71] hover:bg-[#e2bd5b] text-[#748069] px-5 py-2.5 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.03-.17.6-.62 2.19-.71 2.53-.11.43.16.42.34.3 1.4-1 3.23-2.15 3.55-2.38.96.26 1.95.4 2.96.4 5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
+                        <span>複製明細並前往 LINE</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -391,6 +397,9 @@
                 <p>1. 點擊下方按鈕前往 <strong>官方 LINE</strong>，將明細直接「貼上」傳送給我們確認客製細節。</p>
                 <p>2. 核對無誤後，請至賣貨便（1元賣場）將購買數量輸入為總額 <strong><span id="modal-total-amt" class="text-red-600 font-bold">0</span></strong> 完成結帳。</p>
                 <p class="text-[11px] text-gray-500">（若未達 2,000 元免運，系統將於賣貨便結帳時自動計入運費）</p>
+                <p class="text-[11px] text-amber-800 bg-amber-50 p-2 rounded border border-amber-200">
+                    💡 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候 🙏🏻
+                </p>
             </div>
 
             <a href="https://lin.ee/nztXyF1" target="_blank" onclick="closeOrderModal()" 
@@ -429,7 +438,7 @@
                 { name: '芳枸葉', en: 'Fragonia', sci: 'Agonis fragran', price: 980 },
                 { name: '桉油醇迷迭香', en: 'Rosemary', sci: 'Salvia rosmarinus CT cineole', price: 280 },
                 { name: '檸檬尤加利', en: 'Lemon Eucalyptus', sci: 'Eucalyptus citriodora', price: 180 },
-                { name: '甜馬鬱蘭', en: 'Sweet Marjoram', sci: 'Origanum majorana', price: 380 },
+                { name: '甜馬鬱蘭', en: 'Sweet 馬鬱蘭', sci: 'Origanum majorana', price: 380 },
                 { name: '廣藿香', en: 'Patchouli', sci: 'Pogostemon cablin', price: 480 },
                 { name: '百里酚百里香', en: 'Thyme Thymol', sci: 'Thymus vulgaris', price: 480 },
                 { name: '肉桂葉', en: 'Cinnamon leaf', sci: 'Cinnamomum Zylanicum', price: 280 }
@@ -467,7 +476,6 @@
             ]}
         ];
 
-        // 獨立計數資料庫
         let customItems = {
             'inhaler': 0,
             'inhaler-add-oil': 0,
@@ -570,7 +578,6 @@
             const el = document.getElementById(`${key}-qty`);
             if (el) el.innerText = customItems[key];
 
-            // 條件展開輸入框與圖片連動
             if (key === 'inhaler-add-oil') {
                 const box = document.getElementById('inhaler-oil-scent-box');
                 if (customItems[key] > 0) {
@@ -650,7 +657,6 @@
             let totalQty = 0;
             let subtotal = 0;
 
-            // 1. 嗅吸棒本體
             if (customItems['inhaler'] > 0) {
                 const qty = customItems['inhaler'];
                 const scent = document.getElementById('inhaler-scent').value;
@@ -660,7 +666,6 @@
                 subtotal += total;
             }
 
-            // 嗅吸棒加購：5ml 精油
             if (customItems['inhaler-add-oil'] > 0) {
                 const qty = customItems['inhaler-add-oil'];
                 const scent = document.getElementById('inhaler-add-oil-scent').value;
@@ -670,7 +675,6 @@
                 subtotal += total;
             }
 
-            // 嗅吸棒加購：客製刻字
             if (customItems['inhaler-add-engrave'] > 0) {
                 const qty = customItems['inhaler-add-engrave'];
                 const text = document.getElementById('inhaler-engrave-text').value.trim();
@@ -680,7 +684,6 @@
                 subtotal += total;
             }
 
-            // 2. 車用擴香本體
             if (customItems['car-set'] > 0) {
                 const qty = customItems['car-set'];
                 const carScent = document.getElementById('car-scent').value;
@@ -699,7 +702,6 @@
                 subtotal += total;
             }
 
-            // 車用擴香加購：姓名刻字
             if (customItems['car-add-text'] > 0) {
                 const qty = customItems['car-add-text'];
                 const text = document.getElementById('car-engrave-text').value.trim();
@@ -709,7 +711,6 @@
                 subtotal += total;
             }
 
-            // 車用擴香加購：客製圖案
             if (customItems['car-add-pattern'] > 0) {
                 const qty = customItems['car-add-pattern'];
                 const total = 200 * qty;
@@ -718,7 +719,6 @@
                 subtotal += total;
             }
 
-            // 3. 複方純精油
             if (customItems['blend'] > 0) {
                 const qty = customItems['blend'];
                 const scent = document.getElementById('blend-scent').value;
@@ -728,7 +728,6 @@
                 subtotal += total;
             }
 
-            // 4. 單方精油
             for (let id in singleOilsCart) {
                 const o = singleOilsCart[id];
                 const total = o.price * o.qty;
@@ -775,7 +774,8 @@
             });
             text += `---------------------------------\n`;
             text += `💰 預估商品總額：NT$ ${subtotal.toLocaleString()} 元\n`;
-            text += `🚚 運費：${subtotal >= 2000 ? '已達滿 $2,000 免運' : '未達免運（依賣貨便運費計算）'}\n\n`;
+            text += `🚚 運費：${subtotal >= 2000 ? '已達滿 $2,000 免運' : '未達免運（依賣貨便運費計算）'}\n`;
+            text += `⏳ 出貨說明：所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候 🙏🏻\n\n`;
             text += `👉 請協助核對以上配方與刻印內容，確認無誤後我將前往賣貨便下單！`;
 
             navigator.clipboard.writeText(text).then(() => {
@@ -801,46 +801,79 @@
             let rows = '';
             items.forEach(it => {
                 rows += `
-                    <tr style="border-bottom: 1px solid #f0f0f0;">
-                        <td style="padding: 10px 14px;">${it.name}</td>
-                        <td style="padding: 10px 14px; text-align: right;">NT$ ${it.price.toLocaleString()}</td>
-                        <td style="padding: 10px 14px; text-align: right;">${it.qty}</td>
-                        <td style="padding: 10px 14px; text-align: right;">NT$ ${it.total.toLocaleString()}</td>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px 12px; color: #333;">${it.name}</td>
+                        <td style="padding: 10px 12px; text-align: right; color: #555;">NT$ ${it.price.toLocaleString()}</td>
+                        <td style="padding: 10px 12px; text-align: right; color: #555;">${it.qty}</td>
+                        <td style="padding: 10px 12px; text-align: right; color: #333; font-weight: 500;">NT$ ${it.total.toLocaleString()}</td>
                     </tr>
                 `;
             });
 
-            const html = `
-                <div style="width: 750px; padding: 40px; background: #fff; font-family: 'Noto Sans TC', sans-serif;">
-                    <h2 style="text-align: center; color: #748069; margin-bottom: 5px;">KURES 氣味選品明細單</h2>
-                    <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 25px;">官方 LINE: @nztXyF1</p>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
-                        <thead>
-                            <tr style="background: rgba(116, 128, 105, 0.1); border-bottom: 2px solid #748069; color: #748069;">
-                                <th style="padding: 10px 14px; text-align: left;">商品品項</th>
-                                <th style="padding: 10px 14px; text-align: right;">單價</th>
-                                <th style="padding: 10px 14px; text-align: right;">數量</th>
-                                <th style="padding: 10px 14px; text-align: right;">小計</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                    <div style="text-align: right; font-size: 15px; margin-top: 15px;">
-                        <p style="margin: 4px 0;"><strong>商品總計：NT$ ${subtotal.toLocaleString()}</strong></p>
-                        <p style="font-size: 12px; color: #666; margin: 4px 0;">(滿 $2,000 免運，未滿以賣貨便為準)</p>
-                    </div>
+            const pdfContainer = document.createElement('div');
+            pdfContainer.id = 'temp-pdf-render-box';
+            pdfContainer.style.position = 'fixed';
+            pdfContainer.style.left = '0';
+            pdfContainer.style.top = '0';
+            pdfContainer.style.width = '750px';
+            pdfContainer.style.backgroundColor = '#ffffff';
+            pdfContainer.style.zIndex = '-9999';
+            pdfContainer.style.opacity = '1';
+            pdfContainer.style.padding = '40px';
+            pdfContainer.style.boxSizing = 'border-box';
+            pdfContainer.style.fontFamily = "'Noto Sans TC', sans-serif";
+
+            pdfContainer.innerHTML = `
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 style="color: #748069; font-size: 22px; font-weight: bold; margin: 0 0 6px 0;">KURES 氣味選品明細單</h2>
+                    <p style="color: #777; font-size: 13px; margin: 0;">官方 LINE: @nztXyF1</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 25px;">
+                    <thead>
+                        <tr style="background-color: #f4f6f2; border-bottom: 2px solid #748069; color: #748069;">
+                            <th style="padding: 10px 12px; text-align: left; font-weight: bold;">商品品項</th>
+                            <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 85px;">單價</th>
+                            <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 60px;">數量</th>
+                            <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 95px;">小計</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div style="text-align: right; font-size: 14px; border-top: 1px solid #748069; padding-top: 12px;">
+                    <p style="margin: 4px 0; font-size: 16px; color: #333;"><strong>商品總計：NT$ ${subtotal.toLocaleString()}</strong></p>
+                    <p style="font-size: 12px; color: #777; margin: 4px 0;">(滿 NT$ 2,000 免運，未滿以賣貨便為準)</p>
+                    <p style="font-size: 12px; color: #748069; margin: 8px 0 0 0; text-align: center; padding-top: 10px; border-top: 1px dashed #e0e0e0;">
+                        🌿 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候 🙏🏻
+                    </p>
                 </div>
             `;
+
+            document.body.appendChild(pdfContainer);
 
             const opt = {
                 margin: [10, 10, 10, 10],
                 filename: 'KURES_Order_List.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    width: 750
+                },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            html2pdf().set(opt).from(html).save();
+            html2pdf().set(opt).from(pdfContainer).save().then(() => {
+                if (document.body.contains(pdfContainer)) {
+                    document.body.removeChild(pdfContainer);
+                }
+            }).catch(err => {
+                console.error('PDF 導出失敗:', err);
+                if (document.body.contains(pdfContainer)) {
+                    document.body.removeChild(pdfContainer);
+                }
+                alert('PDF 產生失敗，請稍後再試或使用螢幕截圖。');
+            });
         }
     </script>
 </body>
