@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KURES 氣味選品型錄 ｜ 專屬客製香氛與單方精油</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #fdfcf8; color: #333333; }
@@ -15,6 +14,23 @@
         ::-webkit-scrollbar-thumb:hover { background: #5c6653; }
         .product-card { transition: all 0.2s ease; }
         .product-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -4px rgba(116, 128, 105, 0.15); }
+
+        /* 專為列印與匯出 PDF 設計的樣式：隱藏網頁本身，只輸出簡潔清爽的明細單 */
+        #print-area { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: #ffffff;
+                padding: 20px;
+                color: #333333;
+            }
+        }
     </style>
 </head>
 <body class="pb-48">
@@ -62,7 +78,6 @@
                 <!-- 1. 100% 精油櫸木嗅吸棒 -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
-                        <!-- 正方形圖片展示與縮圖切換 (aspect-square) -->
                         <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
                             <img id="inhaler-main-img" src="./images/SM01.png" alt="單支嗅吸棒" class="w-full h-full object-cover transition-opacity duration-200">
                         </div>
@@ -179,7 +194,6 @@
                 <!-- 2. 精油香氛車用擴香 -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
-                        <!-- 正方形圖片展示與縮圖切換 (aspect-square) -->
                         <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
                             <img id="car-main-img" src="./images/Car01.png" alt="車用擴香套組" class="w-full h-full object-cover transition-opacity duration-200">
                         </div>
@@ -296,7 +310,6 @@
                 <!-- 3. 複方純精油 -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-[#748069]/20 flex flex-col justify-between product-card">
                     <div>
-                        <!-- 正方形圖片展示 (aspect-square) -->
                         <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4 border border-gray-100">
                             <img src="./images/BEO01.png" alt="複方純精油" class="w-full h-full object-cover">
                         </div>
@@ -353,7 +366,7 @@
     <!-- 底部常駐購物車 -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#748069] text-white border-t-4 border-[#f1cf71] shadow-2xl p-4 z-40">
         <div class="max-w-5xl mx-auto flex flex-col gap-2.5">
-            <!-- 製作與出貨提醒公告欄 (已移除 🙏🏻) -->
+            <!-- 製作與出貨提醒公告欄 -->
             <div class="text-xs sm:text-[13px] text-amber-200 bg-black/25 px-3 py-1.5 rounded-md text-center tracking-wide font-normal">
                 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
             </div>
@@ -372,7 +385,7 @@
                         清除
                     </button>
                     <button onclick="exportOrderPDF()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-2.5 rounded-lg text-sm font-medium transition">
-                        下載 PDF
+                        下載 / 存為 PDF
                     </button>
                     <button onclick="copyToLine()" class="bg-[#f1cf71] hover:bg-[#e2bd5b] text-[#748069] px-5 py-2.5 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.5 5.43 3.86 7.03-.17.6-.62 2.19-.71 2.53-.11.43.16.42.34.3 1.4-1 3.23-2.15 3.55-2.38.96.26 1.95.4 2.96.4 5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
@@ -411,6 +424,9 @@
             </button>
         </div>
     </div>
+
+    <!-- 專用列印與 PDF 匯出容器 -->
+    <div id="print-area"></div>
 
     <script>
         const singleOilsData = [
@@ -470,7 +486,7 @@
                 { name: '羅馬洋甘菊', en: 'Roman Chamomile', sci: 'Chamaemelum nobile', price: 2080 },
                 { name: '德國洋甘菊', en: 'German Chamomile', sci: 'Matricaria recutita', price: 2280 },
                 { name: '永久花', en: 'Immortelle', sci: 'Helichrysum italicum', price: 2280 },
-                { name: '聖巴克茉莉原精', en: 'Sambac Jasmine', sci: 'Jasminum sambac', price: 4280 },
+                { name: '聖巴克茉莉原精', en: 'Sambac Jasmine', sci: 'Jasminum persistence', price: 4280 },
                 { name: '大馬士革玫瑰原精', en: 'Damask Rose Absolute', sci: 'Rosa damascena', price: 4680 },
                 { name: '大馬士革玫瑰', en: 'Damask Rose', sci: 'Rosa damascena', price: 11800 }
             ]}
@@ -791,7 +807,7 @@
             document.getElementById('order-modal').classList.add('hidden');
         }
 
-        async function exportOrderPDF() {
+        function exportOrderPDF() {
             const { items, subtotal } = getOrderDetails();
             if (items.length === 0) {
                 alert('購物車是空的，請先挑選商品！');
@@ -801,97 +817,45 @@
             let rows = '';
             items.forEach(it => {
                 rows += `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 10px 12px; color: #333;">${it.name}</td>
-                        <td style="padding: 10px 12px; text-align: right; color: #555;">NT$ ${it.price.toLocaleString()}</td>
-                        <td style="padding: 10px 12px; text-align: right; color: #555;">${it.qty}</td>
-                        <td style="padding: 10px 12px; text-align: right; color: #333; font-weight: 500;">NT$ ${it.total.toLocaleString()}</td>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px 12px; color: #1f2937;">${it.name}</td>
+                        <td style="padding: 10px 12px; text-align: right; color: #4b5563;">NT$ ${it.price.toLocaleString()}</td>
+                        <td style="padding: 10px 12px; text-align: right; color: #4b5563;">${it.qty}</td>
+                        <td style="padding: 10px 12px; text-align: right; color: #111827; font-weight: 600;">NT$ ${it.total.toLocaleString()}</td>
                     </tr>
                 `;
             });
 
-            // 建立獨立暫存節點，置於視窗外部但能被完整繪製的位置
-            const pdfContainer = document.createElement('div');
-            pdfContainer.style.position = 'absolute';
-            pdfContainer.style.top = '-99999px';
-            pdfContainer.style.left = '0';
-            pdfContainer.style.width = '750px';
-            pdfContainer.style.backgroundColor = '#ffffff';
-            pdfContainer.style.padding = '30px';
-            pdfContainer.style.boxSizing = 'border-box';
-            pdfContainer.style.fontFamily = "'Noto Sans TC', sans-serif";
-
-            pdfContainer.innerHTML = `
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: #748069; font-size: 22px; font-weight: bold; margin: 0 0 6px 0;">KURES 氣味選品明細單</h2>
-                    <p style="color: #777; font-size: 13px; margin: 0;">官方 LINE: @nztXyF1</p>
-                </div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
-                    <thead>
-                        <tr style="background-color: #f4f6f2; border-bottom: 2px solid #748069; color: #748069;">
-                            <th style="padding: 10px 12px; text-align: left; font-weight: bold;">商品品項</th>
-                            <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 85px;">單價</th>
-                            <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 60px;">數量</th>
-                            <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 95px;">小計</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-                <div style="text-align: right; font-size: 14px; border-top: 1px solid #748069; padding-top: 12px;">
-                    <p style="margin: 4px 0; font-size: 16px; color: #333;"><strong>商品總計：NT$ ${subtotal.toLocaleString()}</strong></p>
-                    <p style="font-size: 12px; color: #777; margin: 4px 0;">(滿 NT$ 2,000 免運，未滿以賣貨便為準)</p>
-                    <p style="font-size: 12px; color: #748069; margin: 8px 0 0 0; text-align: center; padding-top: 10px; border-top: 1px dashed #e0e0e0;">
-                        🌿 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
-                    </p>
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = `
+                <div style="max-width: 650px; margin: 0 auto; font-family: 'Noto Sans TC', sans-serif;">
+                    <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #748069; padding-bottom: 16px;">
+                        <h2 style="color: #748069; font-size: 22px; font-weight: bold; margin: 0 0 6px 0;">KURES 氣味選品明細單</h2>
+                        <p style="color: #6b7280; font-size: 13px; margin: 0;">官方 LINE: @nztXyF1</p>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background-color: #f4f6f2; border-bottom: 2px solid #748069; color: #748069;">
+                                <th style="padding: 10px 12px; text-align: left; font-weight: bold;">商品品項</th>
+                                <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 90px;">單價</th>
+                                <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 60px;">數量</th>
+                                <th style="padding: 10px 12px; text-align: right; font-weight: bold; width: 100px;">小計</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div style="text-align: right; font-size: 14px; border-top: 1px solid #748069; padding-top: 12px;">
+                        <p style="margin: 4px 0; font-size: 16px; color: #111827;"><strong>商品總計：NT$ ${subtotal.toLocaleString()}</strong></p>
+                        <p style="font-size: 12px; color: #6b7280; margin: 4px 0;">(滿 NT$ 2,000 免運，未滿以賣貨便為準)</p>
+                        <p style="font-size: 12px; color: #748069; margin: 12px 0 0 0; text-align: center; padding-top: 12px; border-top: 1px dashed #d1d5db;">
+                            🌿 所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候
+                        </p>
+                    </div>
                 </div>
             `;
 
-            document.body.appendChild(pdfContainer);
-
-            const opt = {
-                margin: [10, 10, 10, 10],
-                filename: 'KURES_Order_List.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                    scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: 800
-                },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            try {
-                const pdfWorker = html2pdf().set(opt).from(pdfContainer);
-                const pdfBlob = await pdfWorker.output('blob');
-
-                if (document.body.contains(pdfContainer)) {
-                    document.body.removeChild(pdfContainer);
-                }
-
-                const blobUrl = URL.createObjectURL(pdfBlob);
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-                if (isMobile) {
-                    window.open(blobUrl, '_blank');
-                } else {
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = blobUrl;
-                    downloadLink.download = 'KURES_Order_List.pdf';
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                }
-
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-            } catch (err) {
-                console.error('PDF 產生失敗:', err);
-                if (document.body.contains(pdfContainer)) {
-                    document.body.removeChild(pdfContainer);
-                }
-                alert('PDF 產生異常，請稍候重試或使用截圖傳送。');
-            }
+            // 喚起系統原生引擎（手機與電腦皆原生支援存成 PDF，清晰且不留空白）
+            window.print();
         }
     </script>
 </body>
