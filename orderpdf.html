@@ -2,225 +2,418 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>訂單出貨單生成器</title>
-  <!-- 引入 Tesseract.js 用於圖片文字辨識 (OCR) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kures 出貨單與訂單管理系統</title>
+  <!-- 引入 Tesseract.js 進行前端無後端 OCR 圖片文字辨識 -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; padding: 24px; background: #f8fafc; color: #334155; }
-    .card { max-width: 800px; margin: 0 auto 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 24px; }
-    h2 { margin-top: 0; margin-bottom: 16px; color: #1e293b; font-size: 1.25rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-group { margin-bottom: 14px; }
-    label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; }
-    input, select { width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
-    .upload-zone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 16px; text-align: center; background: #f8fafc; cursor: pointer; }
-    .btn { background: #0ea5e9; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    .btn:hover { background: #0284c7; }
-    .btn-secondary { background: #64748b; }
-    .btn-secondary:hover { background: #475569; }
-    .status-text { font-size: 0.85rem; color: #64748b; margin-top: 6px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
-    th { background: #f8fafc; }
-    .text-right { text-align: right; }
+    :root {
+      --primary: #4a5568;
+      --accent: #2d3748;
+      --bg: #f7fafc;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Noto Sans TC", sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: var(--bg);
+      color: #2d3748;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .panel {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 18px;
+      font-size: 1.2rem;
+      color: var(--accent);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #4a5568;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+    textarea {
+      resize: vertical;
+      line-height: 1.5;
+    }
+    .file-dropzone {
+      border: 2px dashed #cbd5e0;
+      padding: 16px;
+      text-align: center;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+    .status-badge {
+      font-size: 0.82rem;
+      color: #718096;
+      margin-top: 6px;
+    }
+    .btn-group {
+      text-align: right;
+      margin-top: 16px;
+    }
+    .btn {
+      background: #2b6cb0;
+      color: #fff;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #2c5282; }
+
+    /* 出貨單預覽區樣式 (支援直接列印 / PDF 輸出) */
+    .sheet-preview {
+      background: #fff;
+      padding: 36px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2px solid #2d3748;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .sheet-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .info-table, .content-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .info-table td {
+      padding: 6px 10px;
+      font-size: 0.92rem;
+    }
+    .info-title {
+      font-weight: bold;
+      width: 15%;
+      background: #f7fafc;
+    }
+    .content-table th, .content-table td {
+      border: 1px solid #e2e8f0;
+      padding: 12px;
+      text-align: left;
+    }
+    .content-table th {
+      background: #edf2f7;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+    .pre-text {
+      white-space: pre-wrap;
+      font-family: inherit;
+      line-height: 1.6;
+      margin: 0;
+      font-size: 0.92rem;
+    }
+    .summary-box {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+      font-size: 1rem;
+    }
+    .summary-box div {
+      min-width: 260px;
+      text-align: right;
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .no-print { display: none !important; }
+      .panel { box-shadow: none; padding: 0; margin-bottom: 0; }
+      .sheet-preview { border: none; padding: 0; }
+    }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h2>1. 上傳賣貨便截圖自動帶入</h2>
-  <div class="grid-2">
-    <div>
-      <label>訂單主資訊截圖 (含訂單編號/金額)</label>
-      <input type="file" id="imgMain" accept="image/*" onchange="runOCR('main')">
-      <div id="statusMain" class="status-text">待上傳...</div>
-    </div>
-    <div>
-      <label>收件人資訊截圖 (姓名/手機/門市)</label>
-      <input type="file" id="imgReceiver" accept="image/*" onchange="runOCR('receiver')">
-      <div id="statusReceiver" class="status-text">待上傳...</div>
+<div class="container">
+
+  <!-- 操作面板：僅螢幕顯示，列印時自動隱藏 -->
+  <div class="panel no-print">
+    <h2>1. 賣貨便截圖自動辨識</h2>
+    <div class="grid-2">
+      <div class="file-dropzone">
+        <label>截圖 ①：訂單基本資訊（含編號、金額）</label>
+        <input type="file" id="imgMain" accept="image/*" onchange="processOCR('main')">
+        <div id="statusMain" class="status-badge">等待上傳圖片...</div>
+      </div>
+      <div class="file-dropzone">
+        <label>截圖 ②：收件人資料（姓名、手機、門市）</label>
+        <input type="file" id="imgReceiver" accept="image/*" onchange="processOCR('receiver')">
+        <div id="statusReceiver" class="status-badge">等待上傳圖片...</div>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="card">
-  <h2>2. 訂單與買家資料確認</h2>
-  <div class="grid-2">
-    <div class="form-group">
-      <label>訂購日期</label>
-      <input type="text" id="orderDate" placeholder="YYYY/MM/DD">
+  <div class="panel no-print">
+    <h2>2. 訂單與優惠內容填寫</h2>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>訂購日期</label>
+        <input type="text" id="orderDate" oninput="syncPreview()">
+      </div>
+      <div class="form-group">
+        <label>訂單編號</label>
+        <input type="text" id="orderNo" oninput="syncPreview()">
+      </div>
+      <div class="form-group">
+        <label>付款方式</label>
+        <input type="text" id="paymentMethod" oninput="syncPreview()">
+      </div>
+      <div class="form-group">
+        <label>買家商品總額（含運費）</label>
+        <input type="number" id="orderTotal" placeholder="例: 1018" oninput="syncPreview()">
+      </div>
+      <div class="form-group">
+        <label>收件人姓名</label>
+        <input type="text" id="recipientName" oninput="syncPreview()">
+      </div>
+      <div class="form-group">
+        <label>收件人手機</label>
+        <input type="text" id="recipientPhone" oninput="syncPreview()">
+      </div>
+      <div class="form-group" style="grid-column: span 2;">
+        <label>取件門市地址</label>
+        <input type="text" id="storeAddress" oninput="syncPreview()">
+      </div>
     </div>
-    <div class="form-group">
-      <label>訂單編號</label>
-      <input type="text" id="orderNo" placeholder="CC...">
+
+    <!-- 優惠與折扣輸入 -->
+    <div class="grid-2" style="background: #f8fafc; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+      <div class="form-group">
+        <label>優惠 / 折扣名稱</label>
+        <input type="text" id="discountName" value="專屬折扣優惠" placeholder="例如：滿額折抵、專屬優惠券" oninput="syncPreview()">
+      </div>
+      <div class="form-group">
+        <label>折扣金額 (NT$)</label>
+        <input type="number" id="discountAmount" value="0" min="0" placeholder="例如：100" oninput="syncPreview()">
+      </div>
     </div>
+
+    <!-- 客戶明細與客製內容 -->
     <div class="form-group">
-      <label>付款方式</label>
-      <input type="text" id="paymentMethod" placeholder="取貨付款">
+      <label>商品明細（直接貼上客戶提供的明細）</label>
+      <textarea id="itemsDetail" rows="4" placeholder="在此貼上客戶給您的商品明細內容..." oninput="syncPreview()"></textarea>
     </div>
+
     <div class="form-group">
-      <label>收件人姓名</label>
-      <input type="text" id="recipientName">
+      <label>客製內容 / 製作備註（手 key 區）</label>
+      <textarea id="customNotes" rows="3" placeholder="手 key 客製內容（如：精油配方比例、刻字姓名、特殊包裝需求...）" oninput="syncPreview()"></textarea>
     </div>
-    <div class="form-group">
-      <label>收件人手機</label>
-      <input type="text" id="recipientPhone">
-    </div>
-    <div class="form-group">
-      <label>取貨門市 / 地址</label>
-      <input type="text" id="storeAddress">
+
+    <div class="btn-group">
+      <button class="btn" onclick="window.print()">列印 / 另存 PDF 出貨單</button>
     </div>
   </div>
-</div>
 
-<div class="card">
-  <h2>3. 商品明細與優惠折扣</h2>
-  <table id="itemTable">
-    <thead>
+  <!-- 出貨單列印/預覽區 -->
+  <div class="sheet-preview">
+    <div class="sheet-header">
+      <div>
+        <div class="sheet-title">KURES 出貨訂單明細</div>
+        <div style="font-size: 0.85rem; color: #718096; margin-top: 4px;">訂單日期：<span id="pvOrderDate">-</span></div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 0.9rem;">訂單編號：<span id="pvOrderNo" style="font-weight: 600;">-</span></div>
+        <div style="font-size: 0.85rem; color: #718096;">付款方式：<span id="pvPaymentMethod">-</span></div>
+      </div>
+    </div>
+
+    <table class="info-table" border="1" bordercolor="#e2e8f0">
       <tr>
-        <th>品項名稱</th>
-        <th width="100">數量</th>
-        <th width="120">單價</th>
-        <th width="120">小計</th>
+        <td class="info-title">收件人</td>
+        <td id="pvRecipientName" style="width: 35%;">-</td>
+        <td class="info-title">聯絡手機</td>
+        <td id="pvRecipientPhone">-</td>
       </tr>
-    </thead>
-    <tbody id="itemBody">
       <tr>
-        <td><input type="text" class="item-name" value="精油商品" oninput="calculateTotal()"></td>
-        <td><input type="number" class="item-qty" value="1" min="1" oninput="calculateTotal()"></td>
-        <td><input type="number" class="item-price" value="1018" oninput="calculateTotal()"></td>
-        <td class="item-subtotal text-right">NT$ 1018</td>
+        <td class="info-title">取件門市</td>
+        <td colspan="3" id="pvStoreAddress">-</td>
       </tr>
-    </tbody>
-  </table>
-  
-  <div style="margin-top: 14px;">
-    <button type="button" class="btn btn-secondary" onclick="addItemRow()">+ 新增明細品項</button>
+    </table>
+
+    <table class="content-table">
+      <thead>
+        <tr>
+          <th>商品購買明細</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <pre class="pre-text" id="pvItemsDetail">（尚未填寫明細）</pre>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table class="content-table">
+      <thead>
+        <tr>
+          <th>客製內容與製作備註</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <pre class="pre-text" id="pvCustomNotes">（無客製備註）</pre>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summary-box">
+      <div>
+        <div id="pvDiscountRow" style="display: none; color: #e53e3e; margin-bottom: 6px;">
+          <span id="pvDiscountName">折扣優惠</span>：- NT$ <span id="pvDiscountAmount">0</span>
+        </div>
+        <div style="font-size: 1.15rem; font-weight: bold; border-top: 1px solid #cbd5e0; padding-top: 6px;">
+          買家商品總額（含運費）：<span style="color: #2b6cb0;">NT$ <span id="pvFinalTotal">0</span></span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
-
-  <!-- 優惠折抵區 -->
-  <div class="grid-2">
-    <div class="form-group">
-      <label>優惠折抵備註</label>
-      <input type="text" id="discountNote" value="促銷優惠折抵" placeholder="例如：滿千折百 / VIP折扣">
-    </div>
-    <div class="form-group">
-      <label>折抵金額 (NT$)</label>
-      <input type="number" id="discountAmount" value="0" min="0" oninput="calculateTotal()" placeholder="100">
-    </div>
-  </div>
-
-  <div class="grid-2">
-    <div class="form-group">
-      <label>運費 (NT$)</label>
-      <input type="number" id="shippingFee" value="0" min="0" oninput="calculateTotal()">
-    </div>
-    <div class="form-group text-right">
-      <label>買家實付總金額 (含運費)</label>
-      <div id="finalTotalDisplay" style="font-size: 1.5rem; font-weight: bold; color: #e11d48; margin-top: 6px;">NT$ 1018</div>
-    </div>
-  </div>
 </div>
 
 <script>
-// 計算明細、折扣與總額
-function calculateTotal() {
-  const rows = document.querySelectorAll('#itemBody tr');
-  let itemsTotal = 0;
+// 同步預覽內容
+function syncPreview() {
+  document.getElementById('pvOrderDate').innerText = document.getElementById('orderDate').value || '-';
+  document.getElementById('pvOrderNo').innerText = document.getElementById('orderNo').value || '-';
+  document.getElementById('pvPaymentMethod').innerText = document.getElementById('paymentMethod').value || '-';
+  document.getElementById('pvRecipientName').innerText = document.getElementById('recipientName').value || '-';
+  document.getElementById('pvRecipientPhone').innerText = document.getElementById('recipientPhone').value || '-';
+  document.getElementById('pvStoreAddress').innerText = document.getElementById('storeAddress').value || '-';
   
-  rows.forEach(row => {
-    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-    const price = parseFloat(row.querySelector('.item-price').value) || 0;
-    const subtotal = qty * price;
-    row.querySelector('.item-subtotal').innerText = 'NT$ ' + subtotal;
-    itemsTotal += subtotal;
-  });
+  // 明細與客製內容
+  const items = document.getElementById('itemsDetail').value.trim();
+  document.getElementById('pvItemsDetail').innerText = items || '（尚未填寫明細）';
 
-  const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
-  const shipping = parseFloat(document.getElementById('shippingFee').value) || 0;
-  const grandTotal = Math.max(0, itemsTotal - discount + shipping);
+  const notes = document.getElementById('customNotes').value.trim();
+  document.getElementById('pvCustomNotes').innerText = notes || '（無客製備註）';
 
-  document.getElementById('finalTotalDisplay').innerText = 'NT$ ' + grandTotal;
-}
+  // 優惠折扣與金額計算
+  const originalTotal = parseFloat(document.getElementById('orderTotal').value) || 0;
+  const discountAmt = parseFloat(document.getElementById('discountAmount').value) || 0;
+  const discountName = document.getElementById('discountName').value || '優惠折抵';
 
-function addItemRow() {
-  const tbody = document.getElementById('itemBody');
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" class="item-name" placeholder="品項名稱" oninput="calculateTotal()"></td>
-    <td><input type="number" class="item-qty" value="1" min="1" oninput="calculateTotal()"></td>
-    <td><input type="number" class="item-price" value="0" oninput="calculateTotal()"></td>
-    <td class="item-subtotal text-right">NT$ 0</td>
-  `;
-  tbody.appendChild(tr);
+  if (discountAmt > 0) {
+    document.getElementById('pvDiscountRow').style.display = 'block';
+    document.getElementById('pvDiscountName').innerText = discountName;
+    document.getElementById('pvDiscountAmount').innerText = discountAmt;
+  } else {
+    document.getElementById('pvDiscountRow').style.display = 'none';
+  }
+
+  // 最終實付總額 (自動扣除折扣)
+  const finalTotal = Math.max(0, originalTotal - discountAmt);
+  document.getElementById('pvFinalTotal').innerText = finalTotal;
 }
 
 // 圖片 OCR 擷取邏輯
-async function runOCR(type) {
-  const fileInput = type === 'main' ? document.getElementById('imgMain') : document.getElementById('imgReceiver');
-  const statusEl = type === 'main' ? document.getElementById('statusMain') : document.getElementById('statusReceiver');
-  
+async function processOCR(target) {
+  const fileInput = target === 'main' ? document.getElementById('imgMain') : document.getElementById('imgReceiver');
+  const statusEl = target === 'main' ? document.getElementById('statusMain') : document.getElementById('statusReceiver');
+
   if (!fileInput.files || fileInput.files.length === 0) return;
   const file = fileInput.files[0];
 
-  statusEl.innerText = '正在解析辨識中，請稍候...';
+  statusEl.innerText = '辨識解析中，請稍候...';
 
   try {
     const worker = await Tesseract.createWorker('chi_tra+eng');
-    const ret = await worker.recognize(file);
-    const text = ret.data.text;
+    const res = await worker.recognize(file);
+    const text = res.data.text;
     await worker.terminate();
 
-    statusEl.innerText = '辨識完成！';
+    statusEl.innerText = '辨識完成！已自動帶入';
 
-    if (type === 'main') {
-      // 擷取訂購日期 (例 2026/10/13)
+    if (target === 'main') {
+      // 1. 訂購日期
       const dateMatch = text.match(/\d{4}\/\d{2}\/\d{2}/);
       if (dateMatch) document.getElementById('orderDate').value = dateMatch[0];
 
-      // 擷取訂單編號 (例 CC2610134838058)
+      // 2. 訂單編號 (支援 CC / CM 開頭)
       const noMatch = text.match(/(C[CM]\d{12,15})/);
       if (noMatch) document.getElementById('orderNo').value = noMatch[0];
 
-      // 付款方式
+      // 3. 付款方式
       if (text.includes('取貨付款')) {
         document.getElementById('paymentMethod').value = '取貨付款';
       }
 
-      // 總額 (含運費)
-      const priceMatch = text.match(/\$([0-9,]+)/);
-      if (priceMatch) {
-        const val = priceMatch[1].replace(/,/g, '');
-        const rows = document.querySelectorAll('#itemBody tr');
-        if (rows.length > 0) {
-          rows[0].querySelector('.item-price').value = val;
-          calculateTotal();
-        }
+      // 4. 買家商品總額(含運費)
+      const totalMatch = text.match(/\$([0-9,]+)/);
+      if (totalMatch) {
+        document.getElementById('orderTotal').value = totalMatch[1].replace(/,/g, '');
       }
     } else {
-      // 收件人姓名 (抓取 姓名 或 林*勳 等格式)
+      // 5. 收件人姓名
       const nameMatch = text.match(/姓名\s*[:：]?\s*([^\n\r]+)/);
       if (nameMatch) {
         document.getElementById('recipientName').value = nameMatch[1].replace(/封鎖此使用者/g, '').trim();
       }
 
-      // 手機 (例 0970***909)
+      // 6. 手機
       const phoneMatch = text.match(/09\d{2}[*\d]{6}/);
       if (phoneMatch) {
         document.getElementById('recipientPhone').value = phoneMatch[0];
       }
 
-      // 收件門市
+      // 7. 門市地址
       const storeMatch = text.match(/(.+門市)/);
       if (storeMatch) {
         document.getElementById('storeAddress').value = storeMatch[1].replace(/.*收件地址\s*/, '').trim();
       }
     }
+
+    syncPreview();
   } catch (err) {
     console.error(err);
-    statusEl.innerText = '辨識失敗，請直接手動輸入';
+    statusEl.innerText = '辨識失敗，請手動確認輸入';
   }
 }
 </script>
