@@ -6,7 +6,6 @@
     <title>KURES 訂單確認單生成器</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Tesseract.js 用於前端辨識圖片截圖文字 -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -137,7 +136,6 @@
 
         <!-- 獨立訂單視覺卡片 -->
         <div id="order-card" class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-[#748069]/30 relative overflow-hidden w-full">
-            <!-- 頂部綠條裝飾 -->
             <div class="absolute top-0 left-0 right-0 h-2 bg-[#748069]"></div>
 
             <div class="text-center pt-2 pb-3 border-b border-gray-100">
@@ -246,6 +244,40 @@
             }
         }
 
+        // 圖片預處理：放大 + 轉為黑白高對比，顯著提升 OCR 準確率
+        function preprocessImage(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const scale = 1.5;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const d = imgData.data;
+                    
+                    // 灰階與對比增強
+                    for (let i = 0; i < d.length; i += 4) {
+                        const r = d[i], g = d[i+1], b = d[i+2];
+                        let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                        // 簡單閾值增強文字邊緣
+                        gray = gray > 180 ? 255 : (gray < 90 ? 0 : gray);
+                        d[i] = gray;
+                        d[i+1] = gray;
+                        d[i+2] = gray;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    canvas.toBlob(blob => resolve(blob || file), 'image/png');
+                };
+                img.onerror = () => resolve(file);
+            });
+        }
+
         async function runOCR() {
             if (!file1 && !file2) {
                 alert('請先選擇至少一張截圖喔！');
@@ -261,14 +293,16 @@
                 // 圖一辨識：訂單資訊
                 if (file1) {
                     status.innerText = '辨識圖一 (訂單資訊)...';
-                    const res1 = await Tesseract.recognize(file1, 'chi_tra+eng');
+                    const preprocessed1 = await preprocessImage(file1);
+                    const res1 = await Tesseract.recognize(preprocessed1, 'chi_tra+eng');
                     parseImage1Text(res1.data.text);
                 }
 
                 // 圖二辨識：付款與收件人
                 if (file2) {
                     status.innerText = '辨識圖二 (付款與收件人)...';
-                    const res2 = await Tesseract.recognize(file2, 'chi_tra+eng');
+                    const preprocessed2 = await preprocessImage(file2);
+                    const res2 = await Tesseract.recognize(preprocessed2, 'chi_tra+eng');
                     parseImage2Text(res2.data.text);
                 }
 
@@ -276,81 +310,99 @@
             } catch (err) {
                 console.error(err);
                 status.innerText = '辨識失敗，請手動確認';
-                alert('圖片辨識過程出現異常，請確認圖片是否清晰或手動微調欄位。');
+                alert('圖片辨識過程出現異常，請手動微調欄位。');
             } finally {
                 btn.disabled = false;
                 btn.classList.remove('opacity-50');
             }
         }
 
-        // 解析圖一：訂單資訊 (訂單編號、訂購時間)
+        // 解析圖一：訂單資訊
         function parseImage1Text(text) {
-            // 訂單編號 (過濾掉「我要取消」等干擾文字)
+            // 1. 訂單編號 (CM/CC + 10碼以上)
             const orderNoMatch = text.match(/(?:CM|CC)\d{10,18}/i);
             if (orderNoMatch) {
                 document.getElementById('myship-order-no').value = orderNoMatch[0];
             }
 
-            // 訂購時間 (例如：2026/10/13 12:15:20)
-            const timeMatch = text.match(/訂購時間[^\d]*((?:20\d{2})[\/\-\.](?:0?[1-9]|1[0-2])[\/\-\.](?:0?[1-9]|[12]\d|3[01])\s+[0-2]?\d:[0-5]\d(?::[0-5]\d)?)/);
+            // 2. 訂購時間 (YYYY/MM/DD HH:mm:ss 或 YYYY-MM-DD)
+            const timeMatch = text.match(/((?:20\d{2})[\/\-\.](?:0?[1-9]|1[0-2])[\/\-\.](?:0?[1-9]|[12]\d|3[01])\s+[0-2]?\d:[0-5]\d(?::[0-5]\d)?)/);
             if (timeMatch) {
-                document.getElementById('myship-order-time').value = timeMatch[1].trim();
-            } else {
-                // 寬鬆比對日期時間
-                const fallbackTime = text.match(/((?:20\d{2})[\/\-\.](?:0?[1-9]|1[0-2])[\/\-\.](?:0?[1-9]|[12]\d|3[01])\s+[0-2]?\d:[0-5]\d(?::[0-5]\d)?)/);
-                if (fallbackTime) {
-                    document.getElementById('myship-order-time').value = fallbackTime[1].trim();
-                }
+                document.getElementById('myship-order-time').value = timeMatch[1].replace(/[\-\.]/g, '/').trim();
             }
         }
 
-        // 解析圖二：付款方式、訂單金額、收件人資料 (收件人、手機、門市/收件地址)
+        // 解析圖二：付款方式、訂單金額、收件人資料、門市地址
         function parseImage2Text(text) {
-            // 付款方式
-            if (text.includes('取貨付款')) {
+            // 清除文字中的多餘空格以便進行精準比對
+            const cleanText = text.replace(/[ \t]+/g, ' ');
+
+            // 1. 付款方式 (擴大比對範圍)
+            if (/取\s*貨\s*付\s*款|尚\s*未\s*付\s*款/i.test(cleanText)) {
                 document.getElementById('myship-pay-method').value = '取貨付款 (尚未付款)';
-            } else if (text.includes('信用卡')) {
+            } else if (/信\s*用\s*卡/i.test(cleanText)) {
                 document.getElementById('myship-pay-method').value = '信用卡';
-            } else if (text.includes('ATM') || text.includes('轉帳')) {
+            } else if (/ATM|轉\s*帳/i.test(cleanText)) {
                 document.getElementById('myship-pay-method').value = 'ATM 轉帳';
             }
 
-            // 買家商品總額 = 圖二的「訂單金額」
-            const amountMatch = text.match(/訂單金額[^\$0-9]*\$?\s*([0-9,]{2,8})/);
+            // 2. 買家商品總額 = 訂單金額 (支援「訂單金額」、「訂單」、「金[額/頻]」或 $ 號)
+            let grandTotal = '';
+            const amountMatch = cleanText.match(/(?:訂\s*單\s*金\s*[額頻]|金\s*[額頻]|總\s*[額頻])[^\$0-9\n\r]*\$?\s*([0-9,]{2,8})/i);
             if (amountMatch) {
-                document.getElementById('myship-grand-total').value = amountMatch[1].replace(/,/g, '');
-            }
-
-            // 收件人姓名 (優先從收件人資料區塊提取)
-            let receiverName = '';
-            const receiverBlockMatch = text.match(/收件人資料[\s\S]*?姓名[^\u4e00-\u9fa5*]*([\u4e00-\u9fa5\s\*]{2,5})/);
-            if (receiverBlockMatch) {
-                receiverName = receiverBlockMatch[1].replace(/封鎖此使用者/g, '').trim();
+                grandTotal = amountMatch[1].replace(/,/g, '');
             } else {
-                const anyNameMatch = text.match(/姓名[^\u4e00-\u9fa5*]*([\u4e00-\u9fa5\s\*]{2,5})/);
-                if (anyNameMatch) {
-                    receiverName = anyNameMatch[1].replace(/封鎖此使用者/g, '').trim();
+                // 備用：直接搜尋字元中的金錢格式 $1,938 或 1,938
+                const dollarMatch = cleanText.match(/\$\s*([0-9,]{3,7})/);
+                if (dollarMatch) {
+                    grandTotal = dollarMatch[1].replace(/,/g, '');
                 }
             }
+            if (grandTotal) {
+                document.getElementById('myship-grand-total').value = grandTotal;
+            }
 
+            // 3. 門市地址 = 收件地址 (如「東民門市」、「XX門市」)
+            let store = '';
+            // 優先比對「收件地址」後面的文字
+            const storeLineMatch = cleanText.match(/(?:收\s*件\s*地\s*址)[^\u4e00-\u9fa5A-Za-z0-9]*([^\n\r]+)/);
+            if (storeLineMatch) {
+                const lineCandidate = storeLineMatch[1].trim();
+                const m = lineCandidate.match(/([\u4e00-\u9fa5A-Za-z0-9]+(?:門市)?)/);
+                if (m) store = m[1];
+            }
+            // 若沒抓到，直接全域搜尋以「門市」結尾的詞彙
+            if (!store) {
+                const directStoreMatch = cleanText.match(/([\u4e00-\u9fa5]{2,6}門市)/);
+                if (directStoreMatch) {
+                    store = directStoreMatch[1];
+                }
+            }
+            if (store) {
+                document.getElementById('myship-store').value = store.trim();
+            }
+
+            // 4. 收件人姓名
+            let receiverName = '';
+            const nameMatch = cleanText.match(/(?:姓\s*名)[^\u4e00-\u9fa5*]*([\u4e00-\u9fa5\s\*]{2,6})/);
+            if (nameMatch) {
+                receiverName = nameMatch[1].replace(/封鎖此使用者/g, '').trim();
+            }
             if (receiverName && !document.getElementById('cust-name').value) {
                 document.getElementById('cust-name').value = receiverName;
             }
 
-            // 手機號碼 (如 0928***017)
-            const phoneMatch = text.match(/(?:手機|電話)?[^\d]*(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
-            const receiverPhone = phoneMatch ? phoneMatch[1].trim() : '';
-
-            // 組合收件人顯示
-            const currentCust = document.getElementById('cust-name').value || receiverName;
-            if (currentCust || receiverPhone) {
-                document.getElementById('myship-receiver').value = `${currentCust} ${receiverPhone}`.trim();
+            // 5. 收件人手機
+            let receiverPhone = '';
+            const phoneMatch = cleanText.match(/(?:手\s*機|電\s*話)?[^\d]*(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
+            if (phoneMatch) {
+                receiverPhone = phoneMatch[1].trim();
             }
 
-            // 門市地址 = 圖二的「收件地址」
-            const addressMatch = text.match(/收件地址[^\u4e00-\u9fa5A-Za-z0-9]*([\u4e00-\u9fa5A-Za-z0-9]+(?:門市)?)/);
-            if (addressMatch) {
-                document.getElementById('myship-store').value = addressMatch[1].trim();
+            // 組合姓名與手機
+            const finalCust = document.getElementById('cust-name').value || receiverName;
+            if (finalCust || receiverPhone) {
+                document.getElementById('myship-receiver').value = `${finalCust} ${receiverPhone}`.trim();
             }
         }
 
@@ -435,8 +487,6 @@
             }
 
             // 運費判定 = 買家商品總額（含運費） - 優惠(折扣) - 商品小計
-            // 即：運費 + 商品小計 - 折扣 = 買家商品總額(含運費)
-            // => 運費 = 買家商品總額(含運費) + 折扣 - 商品小計
             let finalGrandTotal = 0;
             let calculatedShipping = 0;
 
