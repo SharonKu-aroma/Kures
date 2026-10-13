@@ -316,7 +316,7 @@
             }
         }
 
-        // 解析圖二：付款方式、訂單金額、姓名（優先讀取訂購人姓名）、收件地址
+        // 解析圖二：付款方式、訂單金額、姓名（訂購人/收件人）、收件地址
         function parseImage2Text(text) {
             // 1. 付款方式
             if (/取\s*貨\s*付\s*款|尚\s*未\s*付\s*款/i.test(text)) {
@@ -344,46 +344,57 @@
 
             const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-            // 3. 姓名辨識：優先鎖定沒有按鈕干擾的「訂購人姓名」
+            // 3. 姓名解析（超強容錯比對）
             let extractedName = '';
+
+            // 優先方案 A：尋找「訂購人姓名」所在行或緊接著的下一行
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
-                if (line.includes('訂購人姓名')) {
-                    let clean = line.replace(/訂購人姓名/g, '').replace(/[:：]/g, '').trim();
-                    const m = clean.match(/[\u4e00-\u9fa5]+[\*\s＊·\u4e00-\u9fa5]*/);
-                    if (m && m[0].length >= 2) {
-                        extractedName = m[0].trim();
-                        break;
+                if (line.includes('訂購人姓名') || line.includes('訂購人')) {
+                    // 先剔除欄位標題與符號
+                    let candidate = line.replace(/訂購人姓名|訂購人|姓名|[:：]/g, '').trim();
+                    // 若同行沒有內容，可能文字在下一行
+                    if (!candidate && i + 1 < lines.length) {
+                        candidate = lines[i + 1].trim();
                     }
-                }
-            }
-
-            // 若沒抓到「訂購人姓名」，才往後抓「收件人」區塊的「姓名」
-            if (!extractedName) {
-                let inReceiverSection = false;
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    if (line.includes('收件人資料') || line.includes('收件人')) {
-                        inReceiverSection = true;
-                    }
-                    if (inReceiverSection && line.includes('姓名')) {
-                        let clean = line.replace(/訂購人|收件人|資料|姓名/g, '')
-                                        .replace(/封鎖此使用者|封鎖|使用者|此使用者/g, '')
-                                        .replace(/[:：]/g, '').trim();
-                        const m = clean.match(/[\u4e00-\u9fa5]+[\*\s＊·\u4e00-\u9fa5]*/);
-                        if (m && m[0].length >= 2) {
-                            extractedName = m[0].trim();
+                    if (candidate) {
+                        // 擷取名字：可能包含中文與遮罩符號 (*, ＊, x, X, 點, 空格)
+                        const nameCandidate = extractNameToken(candidate);
+                        if (nameCandidate) {
+                            extractedName = nameCandidate;
                             break;
                         }
                     }
                 }
             }
 
-            // 備用防線：直接尋找帶有星號遮罩的中文字串
+            // 備用方案 B：若 A 沒抓到，在「收件人資料」下尋找「姓名」
+            if (!extractedName) {
+                let inReceiver = false;
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (line.includes('收件人資料') || line.includes('收件人')) inReceiver = true;
+                    if (inReceiver && line.includes('姓名')) {
+                        let candidate = line.replace(/收件人資料|收件人|姓名|封鎖此使用者|封鎖|使用者|此使用者|[:：]/g, '').trim();
+                        if (!candidate && i + 1 < lines.length) {
+                            candidate = lines[i + 1].replace(/封鎖此使用者|封鎖|使用者|此使用者/g, '').trim();
+                        }
+                        const nameCandidate = extractNameToken(candidate);
+                        if (nameCandidate) {
+                            extractedName = nameCandidate;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 備用方案 C：全域搜尋任何具有遮罩特徵的名字 (例如 蕭*鵬, 蕭x鵬, 蕭 鵬)
             if (!extractedName) {
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
-                    const starMatch = line.match(/([\u4e00-\u9fa5]{1,2}[\*＊][\u4e00-\u9fa5]{1,2})/);
+                    // 排除明顯是手機、門市、信箱或訂單狀態的行
+                    if (/09\d|門市|gmail|@|超商|取貨/i.test(line)) continue;
+                    const starMatch = line.match(/([\u4e00-\u9fa5]{1,2}[\*＊xX·\s][\u4e00-\u9fa5]{1,2})/);
                     if (starMatch) {
                         extractedName = starMatch[1].trim();
                         break;
@@ -392,7 +403,8 @@
             }
 
             if (extractedName) {
-                extractedName = extractedName.replace(/訂購人|收件人|姓名/g, '').trim();
+                // 正規化遮罩符號為 *
+                extractedName = extractedName.replace(/[＊xX·\s]/g, '*');
                 document.getElementById('cust-name').value = extractedName;
             }
 
@@ -431,7 +443,7 @@
                 }
             }
 
-            // 若未比對出，全域尋找含有「門市」字眼或命中「東民」
+            // 全域搜尋「XX門市」或包含「東民」
             if (!store || store.length < 2) {
                 const directStoreMatch = text.match(/([\u4e00-\u9fa5A-Za-z0-9]{2,8}門市)/);
                 if (directStoreMatch) {
@@ -448,6 +460,18 @@
                 }
                 document.getElementById('myship-store').value = store;
             }
+        }
+
+        // 從文字中精準萃取名字 (支援遮罩字元)
+        function extractNameToken(str) {
+            if (!str) return '';
+            // 模式 1：有遮罩字元 (蕭*鵬, 蕭x鵬, 蕭 鵬)
+            const m1 = str.match(/[\u4e00-\u9fa5]{1,2}[\*＊xX·\s][\u4e00-\u9fa5]{1,2}/);
+            if (m1) return m1[0].trim();
+            // 模式 2：純中文 2~4 字 (蕭大鵬)
+            const m2 = str.match(/[\u4e00-\u9fa5]{2,4}/);
+            if (m2) return m2[0].trim();
+            return '';
         }
 
         function clearInput() {
