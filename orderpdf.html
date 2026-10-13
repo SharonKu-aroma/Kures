@@ -114,7 +114,7 @@
                         <input type="text" id="myship-store" placeholder="例如：東民門市" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
                     </div>
                     <div>
-                        <label class="block text-[10px] text-gray-400 mb-0.5">收件人姓名 / 手機 (圖二 收件人)</label>
+                        <label class="block text-[10px] text-gray-400 mb-0.5">收件人姓名 / 手機 (圖二)</label>
                         <input type="text" id="myship-receiver" placeholder="例如：蕭*鵬 0928***017" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
                     </div>
                 </div>
@@ -244,7 +244,6 @@
             }
         }
 
-        // 高效預處理：放大 2 倍 + 灰階 + 柔和對比提升（保留淺橘底色文字）
         function preprocessImage(file) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -252,26 +251,11 @@
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    
                     const scale = 2.0;
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
                     ctx.imageSmoothingEnabled = true;
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const d = imgData.data;
-                    
-                    // 溫和灰階化，不暴力砍掉低飽和像素
-                    for (let i = 0; i < d.length; i += 4) {
-                        let gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-                        // 輕微增加黑白反差
-                        gray = gray < 128 ? gray * 0.85 : Math.min(255, gray * 1.15);
-                        d[i] = gray;
-                        d[i+1] = gray;
-                        d[i+2] = gray;
-                    }
-                    ctx.putImageData(imgData, 0, 0);
                     canvas.toBlob(blob => resolve(blob || file), 'image/png');
                 };
                 img.onerror = () => resolve(file);
@@ -319,23 +303,21 @@
 
         // 解析圖一：訂單資訊
         function parseImage1Text(text) {
-            // 1. 訂單編號 (CM/CC + 10碼以上)
+            // 訂單編號
             const orderNoMatch = text.match(/(?:CM|CC)\d{10,18}/i);
             if (orderNoMatch) {
                 document.getElementById('myship-order-no').value = orderNoMatch[0];
             }
 
-            // 2. 訂購時間 (YYYY/MM/DD HH:mm:ss)
+            // 訂購時間 (YYYY/MM/DD HH:mm:ss)
             const timeMatch = text.match(/((?:20\d{2})[\/\-\.](?:0?[1-9]|1[0-2])[\/\-\.](?:0?[1-9]|[12]\d|3[01])\s+[0-2]?\d:[0-5]\d(?::[0-5]\d)?)/);
             if (timeMatch) {
                 document.getElementById('myship-order-time').value = timeMatch[1].replace(/[\-\.]/g, '/').trim();
             }
         }
 
-        // 解析圖二：付款方式、訂單金額、收件人資料、門市地址
+        // 解析圖二：付款方式、訂單金額、姓名（優先讀取訂購人姓名）、收件地址
         function parseImage2Text(text) {
-            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-
             // 1. 付款方式
             if (/取\s*貨\s*付\s*款|尚\s*未\s*付\s*款/i.test(text)) {
                 document.getElementById('myship-pay-method').value = '取貨付款 (尚未付款)';
@@ -360,81 +342,107 @@
                 document.getElementById('myship-grand-total').value = grandTotal;
             }
 
-            // 3. 收件人姓名解析 (逐行檢索並過濾橘色按鈕文字)
-            let receiverName = '';
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+            // 3. 姓名辨識：優先鎖定沒有按鈕干擾的「訂購人姓名」
+            let extractedName = '';
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
-                if (line.includes('姓名')) {
-                    // 清理可能黏在一起的按鈕字元
-                    let clean = line.replace(/姓名/g, '')
-                                    .replace(/封鎖此使用者|封鎖|使用者|此使用者/g, '')
-                                    .replace(/[:：]/g, '')
-                                    .trim();
-                    // 匹配含星號或純中文名字 (例如 蕭*鵬, 蕭＊鵬, 蕭 鵬)
+                if (line.includes('訂購人姓名')) {
+                    let clean = line.replace(/訂購人姓名/g, '').replace(/[:：]/g, '').trim();
                     const m = clean.match(/[\u4e00-\u9fa5]+[\*\s＊·\u4e00-\u9fa5]*/);
                     if (m && m[0].length >= 2) {
-                        receiverName = m[0].trim();
+                        extractedName = m[0].trim();
                         break;
                     }
                 }
             }
 
-            // 若第一遍沒抓到，嘗試以星號特徵抓取
-            if (!receiverName) {
-                const starNameMatch = text.match(/([\u4e00-\u9fa5]{1,2}[\*＊][\u4e00-\u9fa5]{1,2})/);
-                if (starNameMatch) {
-                    receiverName = starNameMatch[1].trim();
+            // 若沒抓到「訂購人姓名」，才往後抓「收件人」區塊的「姓名」
+            if (!extractedName) {
+                let inReceiverSection = false;
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (line.includes('收件人資料') || line.includes('收件人')) {
+                        inReceiverSection = true;
+                    }
+                    if (inReceiverSection && line.includes('姓名')) {
+                        let clean = line.replace(/訂購人|收件人|資料|姓名/g, '')
+                                        .replace(/封鎖此使用者|封鎖|使用者|此使用者/g, '')
+                                        .replace(/[:：]/g, '').trim();
+                        const m = clean.match(/[\u4e00-\u9fa5]+[\*\s＊·\u4e00-\u9fa5]*/);
+                        if (m && m[0].length >= 2) {
+                            extractedName = m[0].trim();
+                            break;
+                        }
+                    }
                 }
             }
 
-            if (receiverName) {
-                if (!document.getElementById('cust-name').value) {
-                    document.getElementById('cust-name').value = receiverName;
+            // 備用防線：直接尋找帶有星號遮罩的中文字串
+            if (!extractedName) {
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const starMatch = line.match(/([\u4e00-\u9fa5]{1,2}[\*＊][\u4e00-\u9fa5]{1,2})/);
+                    if (starMatch) {
+                        extractedName = starMatch[1].trim();
+                        break;
+                    }
                 }
             }
 
-            // 4. 收件人手機
+            if (extractedName) {
+                extractedName = extractedName.replace(/訂購人|收件人|姓名/g, '').trim();
+                document.getElementById('cust-name').value = extractedName;
+            }
+
+            // 4. 手機號碼
             let receiverPhone = '';
-            const phoneMatch = text.match(/(?:手機|電話)?[^\d]*(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
-            if (phoneMatch) {
-                receiverPhone = phoneMatch[1].trim();
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const phoneMatch = line.match(/(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
+                if (phoneMatch) {
+                    receiverPhone = phoneMatch[1].trim();
+                }
             }
 
-            // 組合姓名與手機
-            const finalCust = document.getElementById('cust-name').value || receiverName;
+            const finalCust = extractedName || document.getElementById('cust-name').value;
             if (finalCust || receiverPhone) {
                 document.getElementById('myship-receiver').value = `${finalCust} ${receiverPhone}`.trim();
             }
 
-            // 5. 門市地址 (逐行檢索收件地址)
+            // 5. 門市地址（收件地址）
             let store = '';
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
-                if (line.includes('收件地址') || line.includes('收件門市') || line.includes('門市地址')) {
-                    let clean = line.replace(/收件地址|收件門市|門市地址|[:：]/g, '').trim();
-                    if (clean) {
+                if (/收\s*件\s*地\s*[址止]|收\s*件\s*門\s*市|地\s*[址止]/i.test(line)) {
+                    let clean = line.replace(/收\s*件\s*地\s*[址止]|收\s*件\s*門\s*市|地\s*[址止]|[:：]/g, '').trim();
+                    if (clean && clean.length >= 2) {
                         store = clean;
                         break;
                     } else if (i + 1 < lines.length) {
-                        // 可能在下一行
-                        store = lines[i + 1].trim();
+                        let nextLine = lines[i + 1].trim();
+                        if (nextLine && !nextLine.includes('門市') && nextLine.length <= 8) {
+                            nextLine += '門市';
+                        }
+                        store = nextLine;
                         break;
                     }
                 }
             }
 
-            // 若仍未取得，直接搜尋含有「門市」字眼的詞
+            // 若未比對出，全域尋找含有「門市」字眼或命中「東民」
             if (!store || store.length < 2) {
-                const storeMatch = text.match(/([\u4e00-\u9fa5A-Za-z0-9]{2,8}門市)/);
-                if (storeMatch) {
-                    store = storeMatch[1].trim();
+                const directStoreMatch = text.match(/([\u4e00-\u9fa5A-Za-z0-9]{2,8}門市)/);
+                if (directStoreMatch) {
+                    store = directStoreMatch[1].trim();
+                } else if (/東\s*民/i.test(text)) {
+                    store = '東民門市';
                 }
             }
 
-            // 清除門市字樣中不必要的符號
             if (store) {
                 store = store.replace(/[^\u4e00-\u9fa5A-Za-z0-9]/g, '');
-                // 如果抓到「東民」但漏了門市，自動補上門市
                 if (store.includes('東民') && !store.includes('門市')) {
                     store += '門市';
                 }
