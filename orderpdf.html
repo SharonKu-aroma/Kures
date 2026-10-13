@@ -1,496 +1,579 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KURES 氣味選品訂單確認單</title>
-  <!-- OCR 與圖片下載庫 -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Noto Sans TC", sans-serif;
-      background: #f1f5f9;
-      margin: 0;
-      padding: 24px;
-      color: #334155;
-    }
-    .wrapper { max-width: 680px; margin: 0 auto; }
-
-    /* 後台輸入區 */
-    .admin-card {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
-    }
-    .admin-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      margin-top: 0;
-      margin-bottom: 14px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #e2e8f0;
-      color: #1e293b;
-    }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-group { margin-bottom: 12px; }
-    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
-    input, textarea {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 0.95rem;
-    }
-    textarea { resize: vertical; line-height: 1.5; }
-    .upload-box {
-      border: 2px dashed #cbd5e1;
-      padding: 12px;
-      border-radius: 8px;
-      background: #f8fafc;
-      text-align: center;
-    }
-    .status-hint { font-size: 0.8rem; color: #64748b; margin-top: 5px; }
-
-    .btn-download {
-      width: 100%;
-      background: #5d6d4e;
-      color: #fff;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 14px;
-      transition: background 0.2s;
-    }
-    .btn-download:hover { background: #4a573e; }
-
-    /* ===================================================
-       原版 KURES 確認單外觀 (完全還原截圖配色與圓角)
-       =================================================== */
-    #order-card-container {
-      background: #75806c; /* 頂部與外框莫蘭迪綠 */
-      padding: 14px 10px 10px 10px;
-      border-radius: 26px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-      max-width: 450px;
-      margin: 0 auto;
-    }
-
-    .order-card {
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 24px 20px 20px 20px;
-      color: #2b2b2b;
-    }
-
-    .card-header {
-      text-align: center;
-      margin-bottom: 22px;
-    }
-    .brand-title {
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #55604b;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
-    }
-    .order-date {
-      font-size: 0.85rem;
-      color: #92998d;
-    }
-
-    .customer-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 18px;
-      font-size: 0.98rem;
-    }
-    .customer-name { font-weight: 700; color: #222; }
-    .badge-pill {
-      background: #edf0eb;
-      color: #71806a;
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-weight: 600;
-    }
-
-    /* 商品明細展示區 */
-    .item-section {
-      margin-bottom: 16px;
-    }
-    .item-main-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 4px;
-    }
-    .item-title-display {
-      font-size: 0.95rem;
-      font-weight: 700;
-      line-height: 1.45;
-      color: #212529;
-      flex: 1;
-      padding-right: 12px;
-      white-space: pre-wrap;
-    }
-    .item-price-display {
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: #212529;
-      white-space: nowrap;
-    }
-    .item-subtext-display {
-      font-size: 0.82rem;
-      color: #a0aec0;
-      line-height: 1.4;
-      white-space: pre-wrap;
-    }
-
-    /* 米黃色客製框 */
-    .custom-box {
-      background: #fdfaf2;
-      border: 1px solid #f6e8cc;
-      border-radius: 16px;
-      padding: 14px 16px;
-      margin-bottom: 16px;
-    }
-    .custom-title {
-      font-size: 0.9rem;
-      font-weight: 800;
-      color: #b0742f;
-      margin-bottom: 6px;
-    }
-    .custom-desc {
-      font-size: 0.9rem;
-      color: #976020;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      margin: 0;
-    }
-
-    /* 淺綠色賣貨便框 */
-    .shipping-box {
-      background: #f5f7f4;
-      border: 1px solid #e1e7de;
-      border-radius: 16px;
-      padding: 14px 16px;
-      font-size: 0.88rem;
-      line-height: 1.6;
-      color: #495057;
-      margin-bottom: 14px;
-    }
-    .shipping-title {
-      font-weight: 700;
-      color: #637158;
-      margin-bottom: 4px;
-    }
-
-    /* 折扣明細與買家實付總計 */
-    .pricing-summary {
-      border-top: 1px dashed #cbd5e1;
-      padding-top: 10px;
-      text-align: right;
-      font-size: 0.9rem;
-    }
-    .discount-tag {
-      color: #e53e3e;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .total-text {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: #2b2b2b;
-    }
-  </style>
-</head>
-<body>
-
-<div class="wrapper">
-
-  <!-- 1. 後台輸入區 -->
-  <div class="admin-card">
-    <div class="admin-title">📸 賣貨便截圖自動辨識</div>
-    <div class="grid-2">
-      <div class="upload-box">
-        <label>截圖 ①：訂單基本資訊</label>
-        <input type="file" id="imgMain" accept="image/*" onchange="runOCR('main')">
-        <div id="statusMain" class="status-hint">等待上傳...</div>
-      </div>
-      <div class="upload-box">
-        <label>截圖 ②：收件人資料</label>
-        <input type="file" id="imgReceiver" accept="image/*" onchange="runOCR('receiver')">
-        <div id="statusReceiver" class="status-hint">等待上傳...</div>
-      </div>
-    </div>
-
-    <div class="admin-title" style="margin-top: 16px;">✏️ 訂單基本欄位（辨識自動帶入 / 可手動修整）</div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label>客戶姓名（確認單抬頭）</label>
-        <input type="text" id="custName" value="Joe" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label>訂購日期</label>
-        <input type="text" id="orderDate" value="2026/10/13" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label>訂單編號</label>
-        <input type="text" id="orderNo" value="CM2610137973540" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label>付款方式</label>
-        <input type="text" id="paymentMethod" value="取貨付款" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label>收件人姓名</label>
-        <input type="text" id="recipientName" value="林*勳" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label>收件人手機</label>
-        <input type="text" id="recipientPhone" value="0970***909" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label>門市地址</label>
-        <input type="text" id="storeAddress" value="竹北門市" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label>買家商品總額（含運費）</label>
-        <input type="number" id="orderTotal" value="1018" oninput="syncPreview()">
-      </div>
-    </div>
-
-    <!-- 優惠折扣設定 -->
-    <div class="grid-2" style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 14px;">
-      <div class="form-group">
-        <label style="color: #92400e;">優惠 / 折扣名稱</label>
-        <input type="text" id="discountTitle" value="專屬折扣" placeholder="例如: 滿千折百" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label style="color: #92400e;">折抵金額 (NT$)</label>
-        <input type="number" id="discountValue" value="0" placeholder="例如: 100" oninput="syncPreview()">
-      </div>
-    </div>
-
-    <!-- 明細貼上與客製手 key 區 -->
-    <div class="form-group">
-      <label>商品明細（直接貼上客戶給您的明細文字）</label>
-      <textarea id="itemDetailText" rows="2" oninput="syncPreview()">精油香氛車用擴香套組 (煦 Glow (甜橙/白玉蘭葉/紅桔/岩蘭草))</textarea>
-    </div>
-
-    <div class="grid-2">
-      <div class="form-group">
-        <label>規格數量備註（貼上或輸入）</label>
-        <input type="text" id="itemSubtext" value="NT$ 980 × 1" oninput="syncPreview()">
-      </div>
-      <div class="form-group">
-        <label>明細金額顯示 (NT$)</label>
-        <input type="number" id="itemPrice" value="980" oninput="syncPreview()">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>客製內容備註（手 key 區）</label>
-      <textarea id="customNotes" rows="2" oninput="syncPreview()">車用擴香夾客製Joe</textarea>
-    </div>
-
-    <button class="btn-download" onclick="exportToImage()">💾 另存成確認單圖片傳給客戶</button>
-  </div>
-
-  <!-- 2. 確認單輸出預覽 (完全還原原版排版) -->
-  <div id="order-card-container">
-    <div class="order-card">
-      <div class="card-header">
-        <div class="brand-title">KURES 氣味選品訂單確認單</div>
-        <div class="order-date">訂購日期：<span id="pvOrderDate">2026/10/13</span></div>
-      </div>
-
-      <div class="customer-row">
-        <div class="customer-name">客戶姓名：<span id="pvCustName">Joe</span></div>
-        <div class="badge-pill">客製專屬確認</div>
-      </div>
-
-      <!-- 商品明細 -->
-      <div class="item-section">
-        <div class="item-main-row">
-          <div class="item-title-display" id="pvItemTitle">精油香氛車用擴香套組 (煦 Glow (甜橙/白玉蘭葉/紅桔/岩蘭草))</div>
-          <div class="item-price-display">NT$ <span id="pvItemPrice">980</span></div>
-        </div>
-        <div class="item-subtext-display" id="pvItemSubtext">NT$ 980 × 1</div>
-      </div>
-
-      <!-- 客製內容備註 (米黃卡片) -->
-      <div class="custom-box">
-        <div class="custom-title">客製內容備註：</div>
-        <div class="custom-desc" id="pvCustomNotes">車用擴香夾客製Joe</div>
-      </div>
-
-      <!-- 賣貨便配送資訊 (淺綠卡片) -->
-      <div class="shipping-box">
-        <div class="shipping-title">賣貨便配送資訊：</div>
-        <div>訂單編號：<span id="pvOrderNo">CM2610137973540</span></div>
-        <div>付款方式：<span id="pvPaymentMethod">取貨付款</span></div>
-        <div>取件門市：<span id="pvStoreAddress">竹北門市</span></div>
-        <div>收件資料：<span id="pvReceiverSummary">林*勳 / 909</span></div>
-      </div>
-
-      <!-- 總額與優惠折扣區 -->
-      <div class="pricing-summary">
-        <div id="pvDiscountRow" class="discount-tag" style="display: none;">
-          <span id="pvDiscountTitle">專屬折扣</span>：- NT$ <span id="pvDiscountAmount">0</span>
-        </div>
-        <div class="total-text">
-          買家商品總額（含運）：NT$ <span id="pvFinalTotal">1018</span>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-</div>
-
-<script>
-// 同步更新確認單內容
-function syncPreview() {
-  document.getElementById('pvCustName').innerText = document.getElementById('custName').value || '-';
-  document.getElementById('pvOrderDate').innerText = document.getElementById('orderDate').value || '-';
-  document.getElementById('pvOrderNo').innerText = document.getElementById('orderNo').value || '-';
-  document.getElementById('pvPaymentMethod').innerText = document.getElementById('paymentMethod').value || '-';
-  document.getElementById('pvStoreAddress').innerText = document.getElementById('storeAddress').value || '-';
-
-  // 組合 收件人姓名 + 手機末三碼
-  const name = document.getElementById('recipientName').value.trim();
-  const phone = document.getElementById('recipientPhone').value.trim();
-  const phoneLast3 = phone.length >= 3 ? phone.slice(-3) : phone;
-  document.getElementById('pvReceiverSummary').innerText = name ? (phoneLast3 ? `${name} / ${phoneLast3}` : name) : '-';
-
-  // 商品明細與客製
-  document.getElementById('pvItemTitle').innerText = document.getElementById('itemDetailText').value;
-  document.getElementById('pvItemSubtext').innerText = document.getElementById('itemSubtext').value;
-  document.getElementById('pvItemPrice').innerText = document.getElementById('itemPrice').value || '0';
-  document.getElementById('pvCustomNotes').innerText = document.getElementById('customNotes').value;
-
-  // 優惠折扣與總計
-  const baseTotal = parseFloat(document.getElementById('orderTotal').value) || 0;
-  const discountVal = parseFloat(document.getElementById('discountValue').value) || 0;
-  const discountName = document.getElementById('discountTitle').value || '優惠折扣';
-
-  if (discountVal > 0) {
-    document.getElementById('pvDiscountRow').style.display = 'block';
-    document.getElementById('pvDiscountTitle').innerText = discountName;
-    document.getElementById('pvDiscountAmount').innerText = discountVal;
-  } else {
-    document.getElementById('pvDiscountRow').style.display = 'none';
-  }
-
-  const finalAmount = Math.max(0, baseTotal - discountVal);
-  document.getElementById('pvFinalTotal').innerText = finalAmount;
-}
-
-// 增強型 OCR 辨識
-async function runOCR(type) {
-  const fileInput = type === 'main' ? document.getElementById('imgMain') : document.getElementById('imgReceiver');
-  const statusEl = type === 'main' ? document.getElementById('statusMain') : document.getElementById('statusReceiver');
-
-  if (!fileInput.files || fileInput.files.length === 0) return;
-  const file = fileInput.files[0];
-
-  statusEl.innerText = '辨識中，請稍候...';
-
-  try {
-    const worker = await Tesseract.createWorker('chi_tra+eng');
-    const res = await worker.recognize(file);
-    const rawText = res.data.text;
-    await worker.terminate();
-
-    statusEl.innerText = '辨識完成！';
-
-    if (type === 'main') {
-      // 1. 訂購日期
-      const dateMatch = rawText.match(/\d{4}\/\d{2}\/\d{2}/);
-      if (dateMatch) document.getElementById('orderDate').value = dateMatch[0];
-
-      // 2. 訂單編號 (優先取 CM，次取 CC)
-      const cmMatch = rawText.match(/CM\d{12,16}/);
-      const ccMatch = rawText.match(/CC\d{12,16}/);
-      if (cmMatch) {
-        document.getElementById('orderNo').value = cmMatch[0];
-      } else if (ccMatch) {
-        document.getElementById('orderNo').value = ccMatch[0];
-      }
-
-      // 3. 付款方式
-      if (rawText.includes('取貨付款') || rawText.includes('尚未付款')) {
-        document.getElementById('paymentMethod').value = '取貨付款';
-      }
-
-      // 4. 買家商品總額（含運費）
-      const totalMatch = rawText.match(/含運費[^\d]*\$?([0-9,]+)/) || rawText.match(/\$([0-9,]+)/);
-      if (totalMatch) {
-        document.getElementById('orderTotal').value = totalMatch[1].replace(/,/g, '');
-      }
-    } else {
-      // 5. 收件人姓名 (排除按鈕文字)
-      const lines = rawText.split('\n');
-      let foundName = '';
-      for (let line of lines) {
-        if (line.includes('姓名')) {
-          let clean = line.replace(/姓名/g, '').replace(/[:：]/g, '').replace(/封鎖.*/g, '').trim();
-          if (clean) { foundName = clean; break; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KURES 訂單確認單生成器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Tesseract.js 用於前端辨識圖片截圖文字 -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background-color: #f7f6f2; 
+            color: #333333; 
+            -webkit-text-size-adjust: 100%;
         }
-      }
-      if (!foundName) {
-        const star = rawText.match(/[\u4e00-\u9fa5][\*＊][\u4e00-\u9fa5]/);
-        if (star) foundName = star[0];
-      }
-      if (foundName) document.getElementById('recipientName').value = foundName;
+        input, textarea, button { font-size: 14px !important; }
+    </style>
+</head>
+<body class="p-3 sm:p-5 max-w-md mx-auto pb-28">
 
-      // 6. 手機
-      const phoneMatch = rawText.match(/09\d{2}[*\d]{6}/);
-      if (phoneMatch) document.getElementById('recipientPhone').value = phoneMatch[0];
+    <!-- 標題列 -->
+    <div class="mb-4 text-center pt-1">
+        <h1 class="text-xl sm:text-2xl font-bold text-[#748069] tracking-wide">KURES 訂單確認生成器</h1>
+        <p class="text-xs text-gray-500 mt-1">貼上 LINE 明細或上傳賣貨便截圖，快速產出確認單</p>
+    </div>
 
-      // 7. 門市地址
-      const storeMatch = rawText.match(/([^\n\r]+門市)/);
-      if (storeMatch) {
-        document.getElementById('storeAddress').value = storeMatch[1].replace(/.*收件地址\s*/, '').trim();
-      }
-    }
+    <!-- 輸入區塊 -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-5">
+        
+        <!-- 截圖上傳與 OCR 辨識區 -->
+        <div class="mb-4 p-3.5 bg-[#fdfcf8] border border-[#748069]/30 rounded-xl">
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-[#748069] flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    上傳賣貨便截圖自動辨識
+                </label>
+                <span id="ocr-status" class="text-[10px] text-gray-400">支援上傳 2 張截圖</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                <label class="border border-dashed border-gray-300 rounded-lg p-2.5 bg-white cursor-pointer hover:border-[#748069] transition block">
+                    <span class="block text-[11px] font-medium text-gray-600 mb-1">圖1: 訂單資訊</span>
+                    <span id="img1-label" class="text-[10px] text-gray-400 truncate block">選擇圖片</span>
+                    <input type="file" id="upload-order-img" accept="image/*" class="hidden" onchange="handleImageSelected(1, this)">
+                </label>
+                <label class="border border-dashed border-gray-300 rounded-lg p-2.5 bg-white cursor-pointer hover:border-[#748069] transition block">
+                    <span class="block text-[11px] font-medium text-gray-600 mb-1">圖2: 收件人資料</span>
+                    <span id="img2-label" class="text-[10px] text-gray-400 truncate block">選擇圖片</span>
+                    <input type="file" id="upload-buyer-img" accept="image/*" class="hidden" onchange="handleImageSelected(2, this)">
+                </label>
+            </div>
+            <button id="ocr-btn" type="button" onclick="runOCR()" class="w-full mt-2 py-2 bg-[#748069]/15 hover:bg-[#748069]/25 text-[#748069] font-bold rounded-lg text-xs transition flex items-center justify-center gap-1">
+                開始辨識圖片並填入資料
+            </button>
+        </div>
 
-    syncPreview();
-  } catch (err) {
-    console.error(err);
-    statusEl.innerText = '辨識發生錯誤，請手動確認輸入';
-  }
-}
+        <label class="block text-xs font-bold text-gray-700 mb-1.5">客人的 LINE 預約明細：</label>
+        <textarea id="raw-input" rows="4" 
+            placeholder="請直接貼上客人的文字訊息，例如：
+【KURES 氣味選品預約明細】
+・100% 精油櫸木嗅吸棒 (煦 Glow)
+  單價: $450 × 2 = $900
+・嗅吸棒加購客製刻字服務
+  單價: $100 × 1 = $100
+預估商品總額：NT$ 1,000 元"
+            class="w-full text-xs p-3 border border-gray-300 rounded-xl focus:border-[#748069] outline-none leading-relaxed bg-gray-50/50 resize-y"></textarea>
 
-// 另存高畫質圖片
-function exportToImage() {
-  const target = document.getElementById('order-card-container');
-  const name = document.getElementById('custName').value || '客戶';
+        <!-- 折扣與稱謂 -->
+        <div class="grid grid-cols-2 gap-2 mt-3">
+            <div>
+                <label class="block text-[11px] font-bold text-gray-600 mb-1">折扣折抵 (NT$)：</label>
+                <input type="number" id="discount-val" placeholder="例如：100" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-gray-600 mb-1">客戶稱謂 (選填)：</label>
+                <input type="text" id="cust-name" placeholder="例如：蕭先生 / 陳小姐" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
+            </div>
+        </div>
 
-  html2canvas(target, {
-    scale: 3,
-    backgroundColor: null,
-    useCORS: true
-  }).then(canvas => {
-    const a = document.createElement('a');
-    a.download = `KURES_訂單確認單_${name}.png`;
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-  });
-}
+        <!-- 客製備註 -->
+        <div class="mt-3">
+            <label class="block text-[11px] font-bold text-gray-600 mb-1">客製內容備註 (選填)：</label>
+            <textarea id="custom-notes" rows="2" placeholder="例如：嗅吸棒刻字「Sharon」、車夾刻印英文字母「K」" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white"></textarea>
+        </div>
 
-// 頁面初次載入
-syncPreview();
-</script>
+        <!-- 賣貨便訂單資訊 -->
+        <div class="mt-4 pt-3 border-t border-gray-100">
+            <label class="block text-[11px] font-bold text-[#748069] mb-2">賣貨便訂單資訊：</label>
+            <div class="space-y-2">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="myship-date" placeholder="訂購日期 (YYYY/MM/DD)" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
+                    <input type="text" id="myship-pay-method" placeholder="付款方式 (如：取貨付款)" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
+                </div>
+                <div>
+                    <input type="text" id="myship-order-no" placeholder="賣貨便訂單編號 (例如：CC2610134851922)" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
+                </div>
+                <div>
+                    <input type="number" id="myship-grand-total" placeholder="買家商品總額（含運費）例如：1938" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white font-medium text-[#748069]">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="text" id="myship-store" placeholder="門市地址 / 取件門市 (例如：東民門市)" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
+                    <input type="text" id="myship-receiver" placeholder="收件人姓名 / 手機" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
+                </div>
+            </div>
+        </div>
 
+        <div class="flex gap-2 mt-4">
+            <button onclick="parseAndGenerate()" class="flex-1 bg-[#748069] active:bg-[#5c6653] text-white py-2.5 rounded-xl font-bold text-sm shadow transition">
+                生成訂單確認單
+            </button>
+            <button onclick="clearInput()" class="px-3.5 py-2.5 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-xl">
+                清空
+            </button>
+        </div>
+    </div>
+
+    <!-- 生成預覽卡片 -->
+    <div id="result-wrapper" class="hidden space-y-4">
+
+        <!-- 獨立訂單視覺卡片 -->
+        <div id="order-card" class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-[#748069]/30 relative overflow-hidden w-full">
+            <!-- 頂部綠條裝飾 -->
+            <div class="absolute top-0 left-0 right-0 h-2 bg-[#748069]"></div>
+
+            <div class="text-center pt-2 pb-3 border-b border-gray-100">
+                <h2 class="text-lg sm:text-xl font-bold text-[#748069] tracking-wider">KURES 氣味選品訂單確認單</h2>
+                <p class="text-[11px] text-gray-400 mt-0.5" id="card-date">訂購日期：2026/10/13</p>
+            </div>
+
+            <div class="py-2.5 text-xs text-gray-600 flex justify-between items-center border-b border-gray-100">
+                <span>客戶姓名：<strong id="card-cust-name" class="text-gray-800 font-bold">貴賓</strong></span>
+                <span class="text-[11px] text-[#748069] bg-[#748069]/10 px-2 py-0.5 rounded-full font-medium">客製專屬確認</span>
+            </div>
+
+            <!-- 品項列表 -->
+            <div id="card-items" class="py-3 space-y-3 border-b border-gray-100 text-xs"></div>
+
+            <!-- 客製內容備註區塊 -->
+            <div id="card-notes-box" class="hidden my-3 p-3 bg-amber-50/70 rounded-xl border border-amber-200/60 text-xs break-words">
+                <span class="font-bold text-amber-900 block mb-1">客製內容備註：</span>
+                <p id="card-notes-text" class="text-amber-800 leading-relaxed whitespace-pre-line"></p>
+            </div>
+
+            <!-- 賣貨便訂單資訊區塊 -->
+            <div id="card-myship-box" class="hidden my-3 p-3 bg-[#fdfcf8] rounded-xl border border-[#748069]/25 text-xs space-y-1 break-words">
+                <span class="font-bold text-[#748069] block mb-1">賣貨便配送資訊：</span>
+                <p id="card-myship-no" class="text-gray-700"></p>
+                <p id="card-myship-pay" class="text-gray-700"></p>
+                <p id="card-myship-store" class="text-gray-700"></p>
+                <p id="card-myship-receiver" class="text-gray-700"></p>
+            </div>
+
+            <!-- 金額計算 -->
+            <div class="pt-2 space-y-1.5 text-xs text-right">
+                <div class="flex justify-between items-center text-gray-500">
+                    <span>商品小計</span>
+                    <span id="card-subtotal" class="font-medium text-gray-800">NT$ 0</span>
+                </div>
+                <div id="card-discount-row" class="hidden flex justify-between items-center text-red-500">
+                    <span>折扣折抵</span>
+                    <span id="card-discount" class="font-medium">- NT$ 0</span>
+                </div>
+                <div class="flex justify-between items-center text-gray-500">
+                    <span>運費判定</span>
+                    <span id="card-shipping" class="font-medium">NT$ 0</span>
+                </div>
+                <div class="flex justify-between items-center text-sm font-bold text-[#748069] pt-2 border-t border-dashed border-gray-200 mt-2">
+                    <span>買家商品總額（含運費）</span>
+                    <span id="card-total" class="text-base text-red-600 font-bold">NT$ 0</span>
+                </div>
+            </div>
+
+            <!-- 溫馨備註 -->
+            <div class="mt-4 pt-3 border-t border-gray-100 bg-[#fdfcf8] p-3 rounded-xl text-[11px] text-gray-500 leading-relaxed">
+                <p>・所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候。</p>
+                <p class="mt-1">・請核對以上商品配方、數量與客製內容，確認無誤後我們將開始為您排單製作。</p>
+            </div>
+        </div>
+
+        <!-- 快捷動作按鈕 -->
+        <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
+            <button onclick="copyReplyText()" class="w-full bg-[#f1cf71] active:bg-[#e0bc5a] text-[#748069] py-3 rounded-xl font-bold text-xs shadow flex items-center justify-center gap-1.5 transition">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                複製確認文字傳給客人
+            </button>
+            <button onclick="saveCardAsImage()" class="w-full bg-[#748069] active:bg-[#5c6653] text-white py-3 rounded-xl font-bold text-xs shadow flex items-center justify-center gap-1.5 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                存成確認圖傳給客人
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        let parsedOrder = {
+            customerName: '',
+            date: '',
+            items: [],
+            subtotal: 0,
+            discount: 0,
+            shippingFee: 0,
+            shippingFeeText: '',
+            total: 0,
+            customNotes: '',
+            myshipOrderNo: '',
+            myshipPayMethod: '',
+            myshipStore: '',
+            myshipReceiver: ''
+        };
+
+        let file1 = null;
+        let file2 = null;
+
+        function handleImageSelected(idx, input) {
+            if (input.files && input.files[0]) {
+                const f = input.files[0];
+                if (idx === 1) {
+                    file1 = f;
+                    document.getElementById('img1-label').innerText = f.name;
+                    document.getElementById('img1-label').classList.remove('text-gray-400');
+                    document.getElementById('img1-label').classList.add('text-[#748069]', 'font-bold');
+                } else {
+                    file2 = f;
+                    document.getElementById('img2-label').innerText = f.name;
+                    document.getElementById('img2-label').classList.remove('text-gray-400');
+                    document.getElementById('img2-label').classList.add('text-[#748069]', 'font-bold');
+                }
+            }
+        }
+
+        async function runOCR() {
+            if (!file1 && !file2) {
+                alert('請先選擇至少一張賣貨便截圖喔！');
+                return;
+            }
+
+            const status = document.getElementById('ocr-status');
+            const btn = document.getElementById('ocr-btn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+
+            try {
+                let fullText = '';
+                const files = [file1, file2].filter(Boolean);
+
+                for (let i = 0; i < files.length; i++) {
+                    status.innerText = `辨識中 (${i + 1}/${files.length})...`;
+                    const res = await Tesseract.recognize(files[i], 'chi_tra+eng');
+                    fullText += '\n' + res.data.text;
+                }
+
+                status.innerText = '辨識完成！已自動帶入';
+                parseOCRText(fullText);
+            } catch (err) {
+                console.error(err);
+                status.innerText = '辨識失敗，請手動填寫';
+                alert('圖片辨識過程出現異常，請確認圖片是否清楚或手動填入。');
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        }
+
+        function parseOCRText(text) {
+            // 1. 訂購日期 (如 2026/10/13 或 2026-10-13)
+            const dateMatch = text.match(/(?:訂購日期|日期)?[^\d]*((?:20\d{2})[\/\-\.](?:0?[1-9]|1[0-2])[\/\-\.](?:0?[1-9]|[12]\d|3[01]))/);
+            if (dateMatch) {
+                document.getElementById('myship-date').value = dateMatch[1].replace(/[\-\.]/g, '/');
+            }
+
+            // 2. 訂單編號 (賣貨便常見英文前綴如 CC/CM 開頭 + 數字串)
+            const orderNoMatch = text.match(/(?:CC|CM)\d{10,18}/i) || text.match(/訂單編號[^\w]*([A-Z0-9]{10,22})/i);
+            if (orderNoMatch) {
+                document.getElementById('myship-order-no').value = orderNoMatch[0] || orderNoMatch[1];
+            }
+
+            // 3. 付款方式 (如：取貨付款)
+            if (text.includes('取貨付款')) {
+                document.getElementById('myship-pay-method').value = '取貨付款';
+            } else if (text.includes('信用卡')) {
+                document.getElementById('myship-pay-method').value = '信用卡';
+            } else if (text.includes('ATM') || text.includes('轉帳')) {
+                document.getElementById('myship-pay-method').value = 'ATM 轉帳';
+            }
+
+            // 4. 買家/賣家商品總額（含運費）
+            const totalMatch = text.match(/(?:商品總額|購買金額)[^\$0-9]*\$?\s*([0-9,]{2,8})/);
+            if (totalMatch) {
+                const cleanTotal = totalMatch[1].replace(/,/g, '');
+                document.getElementById('myship-grand-total').value = cleanTotal;
+            }
+
+            // 5. 姓名
+            const nameMatch = text.match(/姓名[^\u4e00-\u9fa5*]*([\u4e00-\u9fa5\s\*]{2,5})/);
+            if (nameMatch) {
+                const extractedName = nameMatch[1].replace(/封鎖此使用者/g, '').trim();
+                if (extractedName) {
+                    // 若還沒設定稱謂，同步填入稱謂
+                    if (!document.getElementById('cust-name').value) {
+                        document.getElementById('cust-name').value = extractedName;
+                    }
+                }
+            }
+
+            // 6. 手機 (如 0928***017 或 09xx-xxx-xxx)
+            const phoneMatch = text.match(/(?:手機|電話)?[^\d]*(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
+            const extractedPhone = phoneMatch ? phoneMatch[1].trim() : '';
+
+            // 組合收件人姓名與電話
+            const currentCust = document.getElementById('cust-name').value;
+            if (currentCust || extractedPhone) {
+                document.getElementById('myship-receiver').value = `${currentCust} ${extractedPhone}`.trim();
+            }
+
+            // 7. 門市地址 / 收件地址
+            const storeMatch = text.match(/(?:收件地址|門市)[^\u4e00-\u9fa5]*([\u4e00-\u9fa5A-Za-z0-9]+門市)/);
+            if (storeMatch) {
+                document.getElementById('myship-store').value = storeMatch[1].trim();
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('raw-input').value = '';
+            document.getElementById('discount-val').value = '';
+            document.getElementById('cust-name').value = '';
+            document.getElementById('custom-notes').value = '';
+            document.getElementById('myship-date').value = '';
+            document.getElementById('myship-pay-method').value = '';
+            document.getElementById('myship-order-no').value = '';
+            document.getElementById('myship-grand-total').value = '';
+            document.getElementById('myship-store').value = '';
+            document.getElementById('myship-receiver').value = '';
+            document.getElementById('upload-order-img').value = '';
+            document.getElementById('upload-buyer-img').value = '';
+            document.getElementById('img1-label').innerText = '選擇圖片';
+            document.getElementById('img2-label').innerText = '選擇圖片';
+            document.getElementById('img1-label').className = 'text-[10px] text-gray-400 truncate block';
+            document.getElementById('img2-label').className = 'text-[10px] text-gray-400 truncate block';
+            document.getElementById('ocr-status').innerText = '支援上傳 2 張截圖';
+            document.getElementById('result-wrapper').classList.add('hidden');
+            file1 = null;
+            file2 = null;
+        }
+
+        function parseAndGenerate() {
+            const raw = document.getElementById('raw-input').value.trim();
+            const custName = document.getElementById('cust-name').value.trim() || '貴賓';
+            const discountInput = parseInt(document.getElementById('discount-val').value) || 0;
+            const notes = document.getElementById('custom-notes').value.trim();
+            
+            const myshipDate = document.getElementById('myship-date').value.trim();
+            const myshipPay = document.getElementById('myship-pay-method').value.trim();
+            const myshipNo = document.getElementById('myship-order-no').value.trim();
+            const grandTotalInput = document.getElementById('myship-grand-total').value.trim();
+            const myshipStore = document.getElementById('myship-store').value.trim();
+            const myshipReceiver = document.getElementById('myship-receiver').value.trim();
+
+            const now = new Date();
+            const defaultDateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+            const dateStr = myshipDate || defaultDateStr;
+
+            const lines = raw.split('\n');
+            let items = [];
+            let currentItemName = '';
+            let calculatedSubtotal = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (!line) continue;
+
+                if (line.startsWith('・') || line.startsWith('-') || line.startsWith('*')) {
+                    currentItemName = line.replace(/^[・\-\*]\s*/, '').trim();
+                } else if (line.includes('單價') || line.includes('×') || line.includes('=')) {
+                    const priceMatch = line.match(/\$(\d[\d,]*)/);
+                    const qtyMatch = line.match(/[×xX]\s*(\d+)/);
+                    const subMatch = line.match(/=\s*\$?(\d[\d,]*)/);
+
+                    let price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, '')) : 0;
+                    let qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+                    let total = subMatch ? parseInt(subMatch[1].replace(/,/g, '')) : (price * qty);
+
+                    if (currentItemName) {
+                        items.push({
+                            name: currentItemName,
+                            price: price,
+                            qty: qty,
+                            total: total
+                        });
+                        calculatedSubtotal += total;
+                        currentItemName = '';
+                    }
+                }
+            }
+
+            if (calculatedSubtotal === 0) {
+                const totalMatch = raw.match(/總額[：:]\s*NT\$?\s*(\d[\d,]*)/i);
+                if (totalMatch) {
+                    calculatedSubtotal = parseInt(totalMatch[1].replace(/,/g, ''));
+                }
+            }
+
+            // 運費與總額判定邏輯：
+            // 若有提供賣貨便買家商品總額（含運費），則：
+            // 運費 = 買家商品總額（含運費） - 折扣 - 商品小計
+            let finalGrandTotal = 0;
+            let calculatedShipping = 0;
+
+            if (grandTotalInput !== '') {
+                finalGrandTotal = parseInt(grandTotalInput);
+                // 運費判定 = 買家商品總額（含運費） - 折扣 - 商品小計
+                calculatedShipping = finalGrandTotal + discountInput - calculatedSubtotal;
+                if (calculatedShipping < 0) calculatedShipping = 0;
+            } else {
+                // 若無上傳賣貨便含運總額，預設依門檻判定
+                calculatedShipping = (calculatedSubtotal - discountInput >= 2000) ? 0 : 38;
+                finalGrandTotal = Math.max(0, calculatedSubtotal - discountInput + calculatedShipping);
+            }
+
+            let shippingText = calculatedShipping === 0 ? 'NT$ 0 (免運)' : `NT$ ${calculatedShipping.toLocaleString()}`;
+
+            parsedOrder = {
+                customerName: custName,
+                date: dateStr,
+                items: items,
+                subtotal: calculatedSubtotal,
+                discount: discountInput,
+                shippingFee: calculatedShipping,
+                shippingFeeText: shippingText,
+                total: finalGrandTotal,
+                customNotes: notes,
+                myshipOrderNo: myshipNo,
+                myshipPayMethod: myshipPay,
+                myshipStore: myshipStore,
+                myshipReceiver: myshipReceiver
+            };
+
+            // 渲染至卡片
+            document.getElementById('card-date').innerText = `訂購日期：${dateStr}`;
+            document.getElementById('card-cust-name').innerText = custName;
+            document.getElementById('card-subtotal').innerText = `NT$ ${calculatedSubtotal.toLocaleString()}`;
+
+            // 折扣渲染
+            const discountRow = document.getElementById('card-discount-row');
+            if (discountInput > 0) {
+                document.getElementById('card-discount').innerText = `- NT$ ${discountInput.toLocaleString()}`;
+                discountRow.classList.remove('hidden');
+            } else {
+                discountRow.classList.add('hidden');
+            }
+
+            document.getElementById('card-shipping').innerText = shippingText;
+            document.getElementById('card-total').innerText = `NT$ ${finalGrandTotal.toLocaleString()}`;
+
+            const itemsContainer = document.getElementById('card-items');
+            itemsContainer.innerHTML = '';
+
+            if (items.length > 0) {
+                items.forEach(it => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-start gap-2';
+                    div.innerHTML = `
+                        <div class="flex-1 min-w-0 pr-1">
+                            <div class="font-medium text-gray-800 break-words leading-snug">${it.name}</div>
+                            <div class="text-[11px] text-gray-400 mt-0.5">NT$ ${it.price.toLocaleString()} × ${it.qty}</div>
+                        </div>
+                        <div class="font-semibold text-gray-800 whitespace-nowrap text-right shrink-0">NT$ ${it.total.toLocaleString()}</div>
+                    `;
+                    itemsContainer.appendChild(div);
+                });
+            } else {
+                itemsContainer.innerHTML = `<div class="text-gray-400 text-center py-2">商品明細以訂購單為準</div>`;
+            }
+
+            // 渲染客製備註
+            const notesBox = document.getElementById('card-notes-box');
+            if (notes) {
+                document.getElementById('card-notes-text').innerText = notes;
+                notesBox.classList.remove('hidden');
+            } else {
+                notesBox.classList.add('hidden');
+            }
+
+            // 渲染賣貨便資訊
+            const myshipBox = document.getElementById('card-myship-box');
+            if (myshipNo || myshipStore || myshipReceiver || myshipPay) {
+                document.getElementById('card-myship-no').innerText = myshipNo ? `訂單編號：${myshipNo}` : '';
+                document.getElementById('card-myship-pay').innerText = myshipPay ? `付款方式：${myshipPay}` : '';
+                document.getElementById('card-myship-store').innerText = myshipStore ? `門市地址：${myshipStore}` : '';
+                document.getElementById('card-myship-receiver').innerText = myshipReceiver ? `收件資料：${myshipReceiver}` : '';
+                myshipBox.classList.remove('hidden');
+            } else {
+                myshipBox.classList.add('hidden');
+            }
+
+            document.getElementById('result-wrapper').classList.remove('hidden');
+            document.getElementById('result-wrapper').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 複製給客人的回覆文字
+        function copyReplyText() {
+            let t = `您好 ${parsedOrder.customerName}，已經為您核對並建立專屬預約訂單：\n\n`;
+            t += `【KURES 氣味選品訂單確認單】\n`;
+            t += `訂購日期：${parsedOrder.date}\n`;
+            t += `---------------------------------\n`;
+            if (parsedOrder.items.length > 0) {
+                parsedOrder.items.forEach(it => {
+                    t += `・${it.name}\n  單價: $${it.price.toLocaleString()} × ${it.qty} = $${it.total.toLocaleString()}\n`;
+                });
+                t += `---------------------------------\n`;
+            }
+            if (parsedOrder.customNotes) {
+                t += `客製備註：${parsedOrder.customNotes}\n`;
+                t += `---------------------------------\n`;
+            }
+            if (parsedOrder.myshipOrderNo || parsedOrder.myshipStore || parsedOrder.myshipReceiver || parsedOrder.myshipPayMethod) {
+                t += `賣貨便配送資訊：\n`;
+                if (parsedOrder.myshipOrderNo) t += `・訂單編號：${parsedOrder.myshipOrderNo}\n`;
+                if (parsedOrder.myshipPayMethod) t += `・付款方式：${parsedOrder.myshipPayMethod}\n`;
+                if (parsedOrder.myshipStore) t += `・門市地址：${parsedOrder.myshipStore}\n`;
+                if (parsedOrder.myshipReceiver) t += `・收件資料：${parsedOrder.myshipReceiver}\n`;
+                t += `---------------------------------\n`;
+            }
+            t += `商品小計：NT$ ${parsedOrder.subtotal.toLocaleString()} 元\n`;
+            if (parsedOrder.discount > 0) {
+                t += `折扣優惠：- NT$ ${parsedOrder.discount.toLocaleString()} 元\n`;
+            }
+            t += `運費：${parsedOrder.shippingFeeText}\n`;
+            t += `買家商品總額（含運費）：NT$ ${parsedOrder.total.toLocaleString()} 元\n\n`;
+            t += `出貨說明：所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候。\n\n`;
+            t += `請協助核對以上內容，確認無誤後我們將開始為您排單製作！`;
+
+            navigator.clipboard.writeText(t).then(() => {
+                alert('訂單確認文字已複製！可以直接在 LINE 貼上回覆客人。');
+            }).catch(() => {
+                alert('複製失敗，請手動選取文字。');
+            });
+        }
+
+        // 存成圖片
+        function saveCardAsImage() {
+            const card = document.getElementById('order-card');
+            
+            html2canvas(card, {
+                scale: 3,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                windowWidth: 420
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    const newWin = window.open('');
+                    newWin.document.write(`
+                        <html style="background:#222; text-align:center; padding:15px; margin:0;">
+                        <head><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>長按儲存訂單圖</title></head>
+                        <body style="margin:0; padding:15px; display:flex; flex-direction:column; align-items:center;">
+                            <p style="color:#fff; font-size:13px; margin-bottom:12px; font-family:sans-serif;">長按下方圖片即可「儲存影像」回傳給客人：</p>
+                            <img src="${imgData}" style="max-width:100%; height:auto; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.5);" />
+                        </body>
+                        </html>
+                    `);
+                } else {
+                    const a = document.createElement('a');
+                    a.href = imgData;
+                    a.download = `KURES_Order_${parsedOrder.customerName || '確認單'}.png`;
+                    a.click();
+                }
+            }).catch(err => {
+                alert('產生圖片失敗，請使用上方「複製確認文字」功能。');
+            });
+        }
+    </script>
 </body>
 </html>
