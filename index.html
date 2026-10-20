@@ -16,7 +16,7 @@
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="800">
   
-    <!-- 建議正式上線可將 Tailwind 換成正式打包版，此處維持 CDN 方便你快速替換 -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -188,24 +188,31 @@
                         <div class="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 border border-gray-100">
                             <img id="car-main-img" src="./images/Car01.jpg" alt="車用擴香套組" class="w-full h-full object-cover transition-opacity duration-200" loading="lazy">
                         </div>
-                        <div class="grid grid-cols-3 gap-2 mb-4">
+                        <!-- 四張圖片預覽縮圖網格 -->
+                        <div class="grid grid-cols-4 gap-1.5 sm:gap-2 mb-4">
                             <button type="button" onclick="switchImg('car-main-img', './images/Car01.jpg')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/Car01.jpg" class="w-full h-full object-cover" alt="套組/文字" loading="lazy">
+                                    <img src="./images/Car01.jpg" class="w-full h-full object-cover" alt="套組" loading="lazy">
                                 </div>
-                                <span class="text-[10px] block text-center text-gray-500 mt-1">套組/文字</span>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">套組</span>
                             </button>
                             <button type="button" onclick="switchImg('car-main-img', './images/Car02.jpg')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/Car02.jpg" class="w-full h-full object-cover" alt="車夾展示" loading="lazy">
+                                    <img src="./images/Car02.jpg" class="w-full h-full object-cover" alt="情境展示" loading="lazy">
                                 </div>
                                 <span class="text-[10px] block text-center text-gray-500 mt-1">情境展示</span>
                             </button>
+                            <button type="button" onclick="switchImg('car-main-img', './images/Car04.jpg')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
+                                <div class="w-full aspect-square overflow-hidden rounded">
+                                    <img src="./images/Car04.jpg" class="w-full h-full object-cover" alt="客製名字" loading="lazy">
+                                </div>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">客製名字</span>
+                            </button>
                             <button type="button" onclick="switchImg('car-main-img', './images/Car03.jpg')" class="border border-gray-200 rounded p-1 hover:border-[#748069] focus:outline-none">
                                 <div class="w-full aspect-square overflow-hidden rounded">
-                                    <img src="./images/Car03.jpg" class="w-full h-full object-cover" alt="線稿客製" loading="lazy">
+                                    <img src="./images/Car03.jpg" class="w-full h-full object-cover" alt="客製圖案" loading="lazy">
                                 </div>
-                                <span class="text-[10px] block text-center text-gray-500 mt-1">圖案刻印</span>
+                                <span class="text-[10px] block text-center text-gray-500 mt-1">客製圖案</span>
                             </button>
                         </div>
 
@@ -601,19 +608,32 @@
                 }
             }
 
+            // 車用姓名刻字加購：切換至 Car04.jpg
             if (key === 'car-add-text') {
                 const box = document.getElementById('car-text-box');
                 if (customItems[key] > 0) {
                     box.classList.remove('hidden');
-                    switchImg('car-main-img', './images/Car01.jpg');
+                    switchImg('car-main-img', './images/Car04.jpg');
                 } else {
                     box.classList.add('hidden');
+                    if (customItems['car-add-pattern'] > 0) {
+                        switchImg('car-main-img', './images/Car03.jpg');
+                    } else {
+                        switchImg('car-main-img', './images/Car01.jpg');
+                    }
                 }
             }
 
+            // 車用客製圖案加購：切換至 Car03.jpg
             if (key === 'car-add-pattern') {
                 if (customItems[key] > 0) {
                     switchImg('car-main-img', './images/Car03.jpg');
+                } else {
+                    if (customItems['car-add-text'] > 0) {
+                        switchImg('car-main-img', './images/Car04.jpg');
+                    } else {
+                        switchImg('car-main-img', './images/Car01.jpg');
+                    }
                 }
             }
 
@@ -629,28 +649,27 @@
         }
 
         function clearAllCart() {
-            if (confirm('確定要清除目前已選的所有商品嗎？')) {
-                for (let k in customItems) {
-                    customItems[k] = 0;
-                    const el = document.getElementById(`${k}-qty`);
-                    if (el) el.innerText = '0';
-                }
-                for (let id in singleOilsCart) {
-                    const el = document.getElementById(`qty-${id}`);
-                    if (el) el.innerText = '0';
-                }
-                singleOilsCart = {};
-
-                document.getElementById('inhaler-oil-scent-box').classList.add('hidden');
-                document.getElementById('inhaler-engrave-box').classList.add('hidden');
-                document.getElementById('inhaler-engrave-text').value = '';
-                document.getElementById('car-text-box').classList.add('hidden');
-                document.getElementById('car-engrave-text').value = '';
-
-                switchImg('inhaler-main-img', './images/SM01.jpg');
-                switchImg('car-main-img', './images/Car01.jpg');
-                calculateCart();
+            // 使用遮罩彈窗提示代替 alert/confirm 以確保 UI 流暢
+            for (let k in customItems) {
+                customItems[k] = 0;
+                const el = document.getElementById(`${k}-qty`);
+                if (el) el.innerText = '0';
             }
+            for (let id in singleOilsCart) {
+                const el = document.getElementById(`qty-${id}`);
+                if (el) el.innerText = '0';
+            }
+            singleOilsCart = {};
+
+            document.getElementById('inhaler-oil-scent-box').classList.add('hidden');
+            document.getElementById('inhaler-engrave-box').classList.add('hidden');
+            document.getElementById('inhaler-engrave-text').value = '';
+            document.getElementById('car-text-box').classList.add('hidden');
+            document.getElementById('car-engrave-text').value = '';
+
+            switchImg('inhaler-main-img', './images/SM01.jpg');
+            switchImg('car-main-img', './images/Car01.jpg');
+            calculateCart();
         }
 
         function getOrderDetails() {
@@ -758,7 +777,11 @@
         function copyToLine() {
             const { items, totalQty, subtotal } = getOrderDetails();
             if (items.length === 0) {
-                alert('購物車是空的，請先挑選商品喔！');
+                const emptyHint = document.createElement('div');
+                emptyHint.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-900/90 text-white px-5 py-3 rounded-xl shadow-xl z-50 text-sm';
+                emptyHint.innerText = '購物車是空的，請先挑選商品喔！';
+                document.body.appendChild(emptyHint);
+                setTimeout(() => emptyHint.remove(), 2000);
                 return;
             }
 
@@ -773,12 +796,18 @@
             text += `出貨說明：所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候\n\n`;
             text += `請協助核對以上配方與刻印內容，確認無誤後我將前往賣貨便下單！`;
 
-            navigator.clipboard.writeText(text).then(() => {
-                document.getElementById('modal-total-amt').innerText = `NT$ ${subtotal.toLocaleString()}`;
-                document.getElementById('order-modal').classList.remove('hidden');
-            }).catch(err => {
-                alert('複製失敗，請手動截圖購物車內容傳送至 LINE。');
-            });
+            // 使用相容性較佳的複製邏輯
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = text;
+            tempTextArea.style.position = 'fixed';
+            tempTextArea.style.opacity = '0';
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            document.getElementById('modal-total-amt').innerText = `NT$ ${subtotal.toLocaleString()}`;
+            document.getElementById('order-modal').classList.remove('hidden');
         }
 
         function closeOrderModal() {
