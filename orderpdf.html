@@ -76,7 +76,7 @@
             </div>
             <div>
                 <label class="block text-[11px] font-bold text-gray-600 mb-1">客戶稱謂 (選填)：</label>
-                <input type="text" id="cust-name" placeholder="例如：蕭先生 / 陳小姐" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
+                <input type="text" id="cust-name" placeholder="例如：蕭*鵬 / 陳小姐" class="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none bg-white">
             </div>
         </div>
 
@@ -269,7 +269,8 @@
                     const res2 = await Tesseract.recognize(file2, 'chi_tra+eng');
                     parseImage2GlobalText(res2.data.text);
 
-                    status.innerText = '精確定位姓名中...';
+                    // 針對「訂購人姓名」精準定位右側 3 個字元
+                    status.innerText = '定位「訂購人姓名」中...';
                     await cropAndRecognizeName(file2, res2.data.words);
                 }
 
@@ -361,13 +362,54 @@
             }
         }
 
+        // 精準定位「訂購人姓名」5 個字，並擷取其右邊 3 個字元
         async function cropAndRecognizeName(imgFile, words) {
             try {
-                let nameBox = null;
-                for (let i = words.length - 1; i >= 0; i--) {
-                    if (words[i].text.includes('姓名') || words[i].text.includes('名')) {
-                        nameBox = words[i].bbox;
+                let targetBox = null;
+                let charCount = 5;
+
+                // 1. 優先尋找包含完整「訂購人姓名」或「訂購人」的文字塊
+                for (let i = 0; i < words.length; i++) {
+                    const t = words[i].text.replace(/\s+/g, '');
+                    if (t.includes('訂購人姓名')) {
+                        targetBox = words[i].bbox;
+                        charCount = 5;
                         break;
+                    }
+                }
+
+                // 2. 若未成整串，搜尋是否有「訂購人」接續「姓名」的鄰近方塊
+                if (!targetBox) {
+                    for (let i = 0; i < words.length; i++) {
+                        const t = words[i].text.replace(/\s+/g, '');
+                        if (t.includes('訂購人')) {
+                            // 檢查下一個或鄰近方塊是否為「姓名」
+                            if (i + 1 < words.length && words[i + 1].text.includes('姓名')) {
+                                targetBox = {
+                                    x0: words[i].bbox.x0,
+                                    y0: Math.min(words[i].bbox.y0, words[i + 1].bbox.y0),
+                                    x1: words[i + 1].bbox.x1,
+                                    y1: Math.max(words[i].bbox.y1, words[i + 1].bbox.y1)
+                                };
+                                charCount = 5;
+                                break;
+                            } else {
+                                targetBox = words[i].bbox;
+                                charCount = 3;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // 3. 兜底方案：尋找「購人姓名」
+                if (!targetBox) {
+                    for (let i = 0; i < words.length; i++) {
+                        if (words[i].text.includes('購人姓名')) {
+                            targetBox = words[i].bbox;
+                            charCount = 4;
+                            break;
+                        }
                     }
                 }
 
@@ -380,40 +422,52 @@
 
                 let cropX, cropY, cropW, cropH;
 
-                if (nameBox) {
-                    cropX = nameBox.x1 + 10;
-                    cropY = Math.max(0, nameBox.y0 - 5);
-                    cropW = (nameBox.x1 - nameBox.x0) * 2.8;
-                    cropH = (nameBox.y1 - nameBox.y0) + 10;
+                if (targetBox) {
+                    // 計算單一文字大約寬度
+                    const singleCharWidth = (targetBox.x1 - targetBox.x0) / charCount;
+                    
+                    // 從標籤右側開始，預留 5px 冒號或空格間隙
+                    cropX = targetBox.x1 + 6;
+                    cropY = Math.max(0, targetBox.y0 - 6);
+                    // 寬度設定為 3.2 個字元寬度，剛好涵蓋 3 個字（例如「蕭*鵬」）
+                    cropW = singleCharWidth * 3.3;
+                    cropH = (targetBox.y1 - targetBox.y0) + 12;
                 } else {
+                    // 若完全未定位到關鍵字，採用賣貨便版面備用裁切
                     cropX = img.width * 0.35;
-                    cropY = img.height * 0.55;
-                    cropW = img.width * 0.35;
-                    cropH = img.height * 0.2;
+                    cropY = img.height * 0.45;
+                    cropW = img.width * 0.3;
+                    cropH = img.height * 0.08;
                 }
 
-                canvas.width = cropW;
-                canvas.height = cropH;
+                canvas.width = Math.max(10, cropW);
+                canvas.height = Math.max(10, cropH);
                 ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
+                // 單獨辨識右側這 3 個字元
                 const croppedBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
                 const resName = await Tesseract.recognize(croppedBlob, 'chi_tra+eng');
                 let nameText = resName.data.text.trim();
 
-                nameText = nameText.replace(/[^\u4e00-\u9fa5\*\s·xX\-\+]/g, '');
+                // 移除冒號等標點，將常見遮罩雜音轉為標準星號 *
+                nameText = nameText.replace(/[:：]/g, '');
+                nameText = nameText.replace(/[^\u4e00-\u9fa5\*\s·xX\-\+A-Za-z]/g, '');
                 nameText = nameText.replace(/[\s·xX\-\+]/g, '*');
 
-                const match = nameText.match(/[\u4e00-\u9fa5]{1,2}[\*]?[\u4e00-\u9fa5]{1,2}/);
-                let finalName = match ? match[0] : nameText;
+                // 精確擷取 2~3 個字元（如：陳小明 或 蕭*鵬）
+                const match = nameText.match(/([\u4e00-\u9fa5A-Za-z\*]{2,3})/);
+                let finalName = match ? match[1] : nameText.slice(0, 3);
 
                 if (finalName && finalName.length >= 2) {
                     document.getElementById('cust-name').value = finalName;
+                    
+                    // 同步更新收件人欄位中的姓名
                     const phoneMatch = document.getElementById('myship-receiver').value.match(/(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
                     const phone = phoneMatch ? phoneMatch[1] : '';
                     document.getElementById('myship-receiver').value = `${finalName} ${phone}`.trim();
                 }
             } catch (e) {
-                console.warn('區域裁切辨識未觸發，請手動確認姓名', e);
+                console.warn('定位訂購人姓名辨識失敗，請手動確認', e);
             }
         }
 
@@ -470,7 +524,7 @@
                 if (line.startsWith('・') || line.startsWith('-') || line.startsWith('*')) {
                     currentItemName = line.replace(/^[・\-\*]\s*/, '').trim();
 
-                    // 自動擷取包含刻字、客製、刻印或加購文字
+                    // 自動擷取刻字／客製項目
                     if (/刻字|刻印|客製|加購/i.test(currentItemName)) {
                         autoNotes.push(currentItemName);
                     }
