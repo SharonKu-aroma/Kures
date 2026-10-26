@@ -11,7 +11,6 @@
     <meta property="og:description" content="專屬客製香氛與單方精油選品">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sharonku-aroma.github.io/Kures/">
-    <!-- 縮圖使用 Logo.jpg（注意大小寫需與 GitHub 檔案完全一致） -->
     <meta property="og:image" content="https://sharonku-aroma.github.io/Kures/images/Logo.jpg">
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="800">
@@ -258,40 +257,87 @@
                             </div>
                         </div>
 
-                        <!-- 車用專屬獨立刻印加購區塊 -->
-                        <div class="space-y-3 bg-[#fdfcf8] p-3 rounded-lg border border-gray-200 text-xs mb-4">
-                            <div class="font-bold text-gray-700">車用擴香夾客製雷雕：</div>
+                        <!-- 車用專屬客製雷雕加購區塊 -->
+                        <div class="space-y-3 bg-[#fdfcf8] p-3.5 rounded-lg border border-gray-200 text-xs mb-4">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-gray-800">車用擴香夾客製雷雕服務：</span>
+                                <button type="button" onclick="openPatternNoticeModal()" class="text-[11px] text-[#748069] font-medium hover:underline flex items-center gap-0.5">
+                                    <span>注意事項說明</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </button>
+                            </div>
                             
                             <!-- 1. 姓名刻字 (限8字母) -->
-                            <div class="flex items-center justify-between pt-1">
-                                <div>
-                                    <div class="font-medium text-gray-800">姓名刻字 (8個字母內)</div>
-                                    <div class="text-[11px] text-gray-500">NT$ 100 / 個</div>
+                            <div class="pt-1">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-gray-800">姓名刻字 (8個字母內)</div>
+                                        <div class="text-[11px] text-gray-500">NT$ 100 / 個</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="changeCustomQty('car-add-text', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
+                                        <span id="car-add-text-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
+                                        <button onclick="changeCustomQty('car-add-text', 1)" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <button onclick="changeCustomQty('car-add-text', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
-                                    <span id="car-add-text-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
-                                    <button onclick="changeCustomQty('car-add-text', 1)" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                <div id="car-text-box" class="hidden pl-1 mt-1.5">
+                                    <input type="text" id="car-engrave-text" placeholder="欲刻姓名英文字母 (8個字母內)" 
+                                           class="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#748069] outline-none">
                                 </div>
-                            </div>
-                            <div id="car-text-box" class="hidden pl-1">
-                                <input type="text" id="car-engrave-text" placeholder="欲刻姓名英文字母 (8個字母內)" 
-                                       class="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#748069] outline-none">
                             </div>
 
-                            <!-- 2. 客製圖案 (線稿) -->
-                            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                                <div>
-                                    <div class="font-medium text-gray-800">客製圖案 (需自備黑白線稿)</div>
-                                    <div class="text-[11px] text-gray-500">NT$ 200 / 個</div>
+                            <!-- 2. 客製圖案 方案 1：自備線稿 -->
+                            <div class="pt-2.5 border-t border-gray-100">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="openPatternNoticeModal()">
+                                    <div>
+                                        <div class="font-medium text-gray-800 flex items-center gap-1">
+                                            <span>客製圖案 (自備清晰黑白線稿)</span>
+                                            <span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">須自備檔</span>
+                                        </div>
+                                        <div class="text-[11px] text-gray-500">NT$ 200 / 個</div>
+                                    </div>
+                                    <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                                        <button onclick="changeCustomQty('car-add-pattern-ready', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
+                                        <span id="car-add-pattern-ready-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
+                                        <button onclick="handlePatternQtyAdd('car-add-pattern-ready')" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <button onclick="changeCustomQty('car-add-pattern', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
-                                    <span id="car-add-pattern-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
-                                    <button onclick="changeCustomQty('car-add-pattern', 1)" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                <div class="text-[10px] text-gray-400 mt-1 pl-0.5">
+                                    需自備純黑白向量或高解析線條稿，點選可閱讀規格限制。
                                 </div>
                             </div>
-                            <p class="text-[10px] text-gray-400 pl-1 leading-tight">客製圖案請於下單後至官方 LINE 傳送清晰黑白線稿以供製作評估。</p>
+
+                            <!-- 3. 客製圖案 方案 2：提供照片轉線稿 -->
+                            <div class="pt-2.5 border-t border-gray-100">
+                                <div class="flex items-center justify-between cursor-pointer" onclick="openPatternNoticeModal()">
+                                    <div>
+                                        <div class="font-medium text-gray-800 flex items-center gap-1">
+                                            <span>客製圖案 (提供照片由我們設計轉線稿)</span>
+                                            <span class="text-[10px] bg-[#f1cf71]/40 text-[#54604a] font-bold px-1.5 py-0.5 rounded">含繪製處理</span>
+                                        </div>
+                                        <div class="text-[11px] text-gray-500">NT$ 450 / 個</div>
+                                    </div>
+                                    <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                                        <button onclick="changeCustomQty('car-add-pattern-photo', -1)" class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold hover:bg-gray-200">-</button>
+                                        <span id="car-add-pattern-photo-qty" class="font-bold text-[#748069] w-5 text-center">0</span>
+                                        <button onclick="handlePatternQtyAdd('car-add-pattern-photo')" class="w-6 h-6 rounded-full bg-[#748069] text-white font-bold hover:bg-[#5c6653]">+</button>
+                                    </div>
+                                </div>
+
+                                <!-- 照片範例快速預覽與提醒 -->
+                                <div class="mt-2 bg-gray-50 p-2 rounded-lg border border-gray-200/70 flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <img src="https://sharonku-aroma.github.io/Kures/images/kunbo.jpg" alt="照片範例" class="w-10 h-10 object-cover rounded-md border border-gray-300 shrink-0" onerror="this.src='./images/Car03.jpg'">
+                                        <div class="text-[11px] text-gray-600 leading-tight">
+                                            <span class="font-medium text-gray-800 block">照片範例 (如寵物、物件)：</span>
+                                            <a href="https://sharonku-aroma.github.io/Kures/images/kunbo.jpg" target="_blank" class="text-[#748069] hover:underline">點此看原圖</a>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="openPatternNoticeModal()" class="text-[10px] bg-white border border-[#748069]/40 text-[#748069] px-2 py-1 rounded hover:bg-[#748069] hover:text-white transition">
+                                        注意事項
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- 使用說明與規格 -->
@@ -392,6 +438,70 @@
         </div>
     </div>
 
+    <!-- 🌟 客製圖案注意事項專屬彈窗 🌟 -->
+    <div id="pattern-notice-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex justify-center items-center px-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border-t-4 border-[#748069] max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+                <div class="flex items-center gap-2 text-gray-900 font-bold text-base sm:text-lg">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#f1cf71]"></span>
+                    【客製圖案注意事項】
+                </div>
+                <button onclick="closePatternNoticeModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold px-2">
+                    &times;
+                </button>
+            </div>
+
+            <!-- 注意事項內容清單 -->
+            <div class="space-y-4 text-xs sm:text-[13px] text-gray-700 leading-relaxed">
+                <!-- 條款 1 -->
+                <div class="bg-rose-50 border border-rose-200/80 p-3 rounded-lg text-rose-900">
+                    <p class="font-bold flex items-center gap-1.5 text-rose-800 mb-1">
+                        <span>⚠️ 不接受真人照片直接雷雕</span>
+                    </p>
+                    <p class="text-xs text-rose-700">因車用擴香夾雕刻面積精巧，真人照片直接雷雕極易產生灰階雜訊與陰影失真，無法呈現良好美感。</p>
+                </div>
+
+                <!-- 條款 2 -->
+                <div class="bg-gray-50 border border-gray-200 p-3 rounded-lg">
+                    <p class="font-bold text-gray-900 mb-1">・若需人像圖案：</p>
+                    <p class="text-gray-600 mb-2">
+                        請直接自備並提供<strong>「似顏繪／黑白簡約線條稿」</strong>；若需由我們協助將照片轉為設計線稿，均以<strong>簡單線條似顏繪風格</strong>為主。
+                    </p>
+                    <div class="flex items-center gap-3 bg-white p-2 rounded border border-gray-200">
+                        <img src="https://sharonku-aroma.github.io/Kures/images/likeface.jpg" alt="似顏繪風格範例" class="w-14 h-14 object-cover rounded border border-gray-200 shrink-0" onerror="this.src='./images/Car03.jpg'">
+                        <div class="text-[11px] text-gray-600">
+                            <span class="font-medium text-gray-800 block">風格參考圖：</span>
+                            <a href="https://sharonku-aroma.github.io/Kures/images/likeface.jpg" target="_blank" class="text-[#748069] font-medium underline inline-flex items-center gap-1 mt-0.5">
+                                點此開啟完整似顏繪範例 ↗
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 條款 3 -->
+                <div class="bg-gray-50 border border-gray-200 p-3 rounded-lg">
+                    <p class="font-bold text-gray-900 mb-1">・自備圖檔標準：</p>
+                    <p class="text-gray-600">
+                        請提供<strong>黑白純色、線條清晰</strong>之圖檔（線條過細可能無法完整雷雕出來，且金屬雷雕面有黑白深淺變化為正常物理現象）。
+                    </p>
+                </div>
+
+                <!-- 兩種方案計價對照 -->
+                <div class="border border-dashed border-gray-300 p-3 rounded-lg text-xs space-y-1 bg-[#fdfcf8]">
+                    <div class="font-bold text-gray-800 mb-1">方案費用說明：</div>
+                    <p>• <strong>自備黑白線稿</strong>：+NT$ 200 / 個（排版直接上機雷雕）</p>
+                    <p>• <strong>提供照片轉設計線稿</strong>：+NT$ 450 / 個（含手繪線條化設計 + 排版雷雕）</p>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-3 border-t border-gray-100">
+                <button type="button" onclick="closePatternNoticeModal()" class="w-full bg-[#748069] hover:bg-[#5c6653] text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                    我已了解並同意
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 複製成功提示前往 LINE 彈窗 -->
     <div id="order-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex justify-center items-center px-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center border-t-4 border-[#748069]">
@@ -402,7 +512,7 @@
             
             <div class="text-left bg-[#fdfcf8] p-4 rounded-xl border border-gray-200 text-xs text-gray-700 space-y-2.5 mb-6 leading-relaxed">
                 <p class="font-bold text-sm text-gray-900">下一步下單流程：</p>
-                <p>1. 點擊下方按鈕前往 <strong>官方 LINE</strong>，將明細直接「貼上」傳送給我們確認客製內容。</p>
+                <p>1. 點擊下方按鈕前往 <strong>官方 LINE</strong>，將明細直接「貼上」傳送給我們確認客製內容與傳送圖檔。</p>
                 <p>2. 核對無誤後，請至賣貨便（1元賣場）將購買數量輸入為總額 <strong><span id="modal-total-amt" class="text-red-600 font-bold">0</span></strong> 完成結帳。</p>
                 <p class="text-[11px] text-gray-500">（若未達 2,000 元免運，未滿之運費以賣貨便為準）</p>
                 <p class="text-[11px] text-amber-800 bg-amber-50 p-2 rounded border border-amber-200">
@@ -491,7 +601,8 @@
             'car-set': 0,
             'car-refill': 0,
             'car-add-text': 0,
-            'car-add-pattern': 0,
+            'car-add-pattern-ready': 0, // 自備線稿 $200
+            'car-add-pattern-photo': 0, // 照片轉線稿 $450
             'blend': 0
         };
         let singleOilsCart = {};
@@ -519,6 +630,22 @@
             } else {
                 warningEl.classList.add('hidden');
             }
+        }
+
+        function openPatternNoticeModal() {
+            document.getElementById('pattern-notice-modal').classList.remove('hidden');
+        }
+
+        function closePatternNoticeModal() {
+            document.getElementById('pattern-notice-modal').classList.add('hidden');
+        }
+
+        function handlePatternQtyAdd(key) {
+            // 首次或增加數量時開啟注意事項彈窗提醒顧客規範
+            if ((customItems[key] || 0) === 0) {
+                openPatternNoticeModal();
+            }
+            changeCustomQty(key, 1);
         }
 
         function renderSingleOils() {
@@ -616,7 +743,7 @@
                     switchImg('car-main-img', './images/Car04.jpg');
                 } else {
                     box.classList.add('hidden');
-                    if (customItems['car-add-pattern'] > 0) {
+                    if (customItems['car-add-pattern-ready'] > 0 || customItems['car-add-pattern-photo'] > 0) {
                         switchImg('car-main-img', './images/Car03.jpg');
                     } else {
                         switchImg('car-main-img', './images/Car01.jpg');
@@ -625,8 +752,9 @@
             }
 
             // 車用客製圖案加購：切換至 Car03.jpg
-            if (key === 'car-add-pattern') {
-                if (customItems[key] > 0) {
+            if (key === 'car-add-pattern-ready' || key === 'car-add-pattern-photo') {
+                const hasPattern = (customItems['car-add-pattern-ready'] > 0) || (customItems['car-add-pattern-photo'] > 0);
+                if (hasPattern) {
                     switchImg('car-main-img', './images/Car03.jpg');
                 } else {
                     if (customItems['car-add-text'] > 0) {
@@ -649,7 +777,6 @@
         }
 
         function clearAllCart() {
-            // 使用遮罩彈窗提示代替 alert/confirm 以確保 UI 流暢
             for (let k in customItems) {
                 customItems[k] = 0;
                 const el = document.getElementById(`${k}-qty`);
@@ -731,10 +858,20 @@
                 subtotal += total;
             }
 
-            if (customItems['car-add-pattern'] > 0) {
-                const qty = customItems['car-add-pattern'];
+            // 方案 1：客製圖案 (自備清晰黑白線稿) - 200元
+            if (customItems['car-add-pattern-ready'] > 0) {
+                const qty = customItems['car-add-pattern-ready'];
                 const total = 200 * qty;
-                items.push({ name: `車用擴香夾客製圖案 (自備線稿)`, price: 200, qty: qty, total: total });
+                items.push({ name: `車用擴香夾客製圖案 (自備清晰黑白線稿)`, price: 200, qty: qty, total: total });
+                totalQty += qty;
+                subtotal += total;
+            }
+
+            // 方案 2：客製圖案 (提供照片由我們設計轉線稿) - 450元
+            if (customItems['car-add-pattern-photo'] > 0) {
+                const qty = customItems['car-add-pattern-photo'];
+                const total = 450 * qty;
+                items.push({ name: `車用擴香夾客製圖案 (提供照片由Sharon設計轉線稿)`, price: 450, qty: qty, total: total });
                 totalQty += qty;
                 subtotal += total;
             }
@@ -796,7 +933,6 @@
             text += `出貨說明：所有商品皆為 Sharon 精心製作，訂單結帳後 7-14 個工作日出貨，感謝您的耐心等候\n\n`;
             text += `請協助核對以上配方與刻印內容，確認無誤後我將前往賣貨便下單！`;
 
-            // 使用相容性較佳的複製邏輯
             const tempTextArea = document.createElement('textarea');
             tempTextArea.value = text;
             tempTextArea.style.position = 'fixed';
