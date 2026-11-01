@@ -226,6 +226,8 @@
 
         let file1 = null;
         let file2 = null;
+        let ocrFields = { total: null, ship: null, sub: null }; // 圖二辨識到的金額（運費判定用）
+        let lastNameGuess = '';                                  // 姓名若是推測補 * 的，記在這裡
 
         function handleImageSelected(idx, input) {
             if (input.files && input.files[0]) {
@@ -257,9 +259,38 @@
             });
         }
 
+        // 區域加總（積分圖），用來判斷「橘色塊」vs「橘色細字」
+        function boxSum(mask, w, h, R) {
+            const W = w + 1;
+            const integ = new Int32Array(W * (h + 1));
+            for (let y = 0; y < h; y++) {
+                let row = 0;
+                for (let x = 0; x < w; x++) {
+                    row += mask[y * w + x];
+                    integ[(y + 1) * W + (x + 1)] = integ[y * W + (x + 1)] + row;
+                }
+            }
+            const out = new Int32Array(w * h);
+            for (let y = 0; y < h; y++) {
+                const y0 = Math.max(0, y - R), y1 = Math.min(h, y + R + 1);
+                for (let x = 0; x < w; x++) {
+                    const x0 = Math.max(0, x - R), x1 = Math.min(w, x + R + 1);
+                    out[y * w + x] = integ[y1 * W + x1] - integ[y0 * W + x1] - integ[y1 * W + x0] + integ[y0 * W + x0];
+                }
+            }
+            return out;
+        }
+
+        // mode 'clean'：取 RGB 最小值當灰階（紅字、橘字變深，淺粉底與灰線變白）
+        // mode 'gray' ：一般灰階（備援用）
+        // 兩種都會把「封鎖此使用者」橘色標籤洗白，並把標籤位置記在 canvas._badge（姓名就在它左邊）
         async function preprocessImage(file, mode) {
             const img = await loadImageElement(file);
-            const scale = Math.min(3, Math.max(1, 1800 / img.naturalWidth));
+            let scale = Math.min(3, Math.max(1, 1800 / img.naturalWidth));
+            const maxPx = 10e6;
+            if (img.naturalWidth * img.naturalHeight * scale * scale > maxPx) {
+                scale = Math.sqrt(maxPx / (img.naturalWidth * img.naturalHeight));
+            }
             const w = Math.round(img.naturalWidth * scale);
             const h = Math.round(img.naturalHeight * scale);
             const canvas = document.createElement('canvas');
@@ -274,24 +305,95 @@
 
             const imgData = ctx.getImageData(0, 0, w, h);
             const d = imgData.data;
-            for (let i = 0; i < d.length; i += 4) {
+            const n = w * h;
+
+            // 只洗掉「大面積橘色塊」（封鎖此使用者標籤）；橘色細字（手機號碼）要保留
+            const orange = new Uint8Array(n);
+            for (let p = 0, i = 0; p < n; p++, i += 4) {
                 const r = d[i], g = d[i + 1], b = d[i + 2];
+                if (r > 200 && g > 80 && g < 160 && b < 110 && (r - b) > 100) orange[p] = 1;
+            }
+            const R = Math.max(4, Math.round(8 * scale));
+            const win = (2 * R + 1) * (2 * R + 1);
+            const dens = boxSum(orange, w, h, R);
+            const core = new Uint8Array(n);
+            const rowCnt = new Int32Array(h);
+            const rowMin = new Int32Array(h).fill(w);
+            const rowMax = new Int32Array(h).fill(-1);
+            for (let p = 0; p < n; p++) {
+                if (orange[p] && dens[p] > 0.45 * win) {
+                    core[p] = 1;
+                    const x = p % w, y = (p - x) / w;
+                    rowCnt[y]++;
+                    if (x < rowMin[y]) rowMin[y] = x;
+                    if (x > rowMax[y]) rowMax[y] = x;
+                }
+            }
+            // 把有橘色塊的列分成上下幾段（頁首的賣貨便 logo 也是橘色），取最下面那一段當「封鎖此使用者」標籤
+            const bands = [];
+            for (let y = 0, start = -1, last = -1; y <= h; y++) {
+                if (y < h && rowCnt[y] > 0) {
+                    if (start < 0) start = y;
+                    else if (y - last > 3) { bands.push([start, last]); start = y; }
+                    last = y;
+                } else if (y === h && start >= 0) {
+                    bands.push([start, last]);
+                }
+            }
+            let coreCount = 0, bx0 = w, bx1 = 0, by0 = h, by1 = 0;
+            if (bands.length > 0) {
+                const band = bands[bands.length - 1];
+                by0 = band[0];
+                by1 = band[1];
+                for (let y = by0; y <= by1; y++) {
+                    coreCount += rowCnt[y];
+                    if (rowMin[y] < bx0) bx0 = rowMin[y];
+                    if (rowMax[y] > bx1) bx1 = rowMax[y];
+                }
+            }
+            // 往外多洗一圈，去掉標籤邊緣的灰色殘影
+            const grown = boxSum(core, w, h, Math.ceil(2 * scale));
+
+            for (let p = 0, i = 0; p < n; p++, i += 4) {
                 let v;
-                if (mode === 'clean') {
-                    if (r > 200 && g > 90 && g < 150 && b < 100 && (r - b) > 110) {
-                        v = 255; // 橘色區塊（封鎖此使用者標籤、橘字手機）
-                    } else {
-                        v = Math.min(r, g, b);
-                        v = (v - 50) * 255 / (190 - 50);
-                        v = v < 0 ? 0 : (v > 255 ? 255 : v);
-                    }
+                if (grown[p] > 0) {
+                    v = 255;
+                } else if (mode === 'clean') {
+                    v = Math.min(d[i], d[i + 1], d[i + 2]);
                 } else {
-                    v = 0.299 * r + 0.587 * g + 0.114 * b;
+                    v = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
                 }
                 d[i] = d[i + 1] = d[i + 2] = v;
             }
             ctx.putImageData(imgData, 0, 0);
+
+            // 標籤大小合理才採用（太小／太大都當作沒找到）
+            if (coreCount > 200 && (bx1 - bx0) < 0.6 * w && (by1 - by0) < 0.12 * h) {
+                canvas._badge = { x0: bx0, x1: bx1, y0: by0, y1: by1 };
+            } else {
+                canvas._badge = null;
+            }
             return canvas;
+        }
+
+        // 把「封鎖此使用者」標籤左邊那一小塊（姓名所在）裁出來，單獨辨識
+        function cropLeftOfBadge(canvas) {
+            const b = canvas._badge;
+            if (!b) return null;
+            const H = b.y1 - b.y0;
+            const x0 = Math.max(0, Math.round(b.x0 - 0.12 * canvas.width));
+            const x1 = Math.max(x0 + 10, b.x0 - 4);
+            const y0 = Math.max(0, Math.round(b.y0 - 0.4 * H));
+            const y1 = Math.min(canvas.height, Math.round(b.y1 + 0.4 * H));
+            const pad = 20;
+            const out = document.createElement('canvas');
+            out.width = (x1 - x0) + pad * 2;
+            out.height = (y1 - y0) + pad * 2;
+            const octx = out.getContext('2d');
+            octx.fillStyle = '#ffffff';
+            octx.fillRect(0, 0, out.width, out.height);
+            octx.drawImage(canvas, x0, y0, x1 - x0, y1 - y0, pad, pad, x1 - x0, y1 - y0);
+            return out;
         }
 
         async function runOCR() {
@@ -316,44 +418,74 @@
                     parseImage1Text(res1.data.text);
                 }
 
-                // 圖二辨識：付款與收件人（前處理 + 逐行辨識 + 兩輪備援）
+                // 圖二辨識：金額（小計／運費／總計）與收件人資料（姓名／手機／門市）
                 if (file2) {
+                    ocrFields = { total: null, ship: null, sub: null };
+                    lastNameGuess = '';
+
                     status.innerText = '圖二前處理中...';
                     worker = await Tesseract.createWorker('chi_tra+eng');
 
-                    // 第 1 輪：去色塊 + 高對比，整塊逐行辨識 (PSM 6)
+                    // 第 1 輪：去橘色標籤，整張逐行辨識 (PSM 6)
                     status.innerText = '辨識圖二 (第 1 輪)...';
                     const cleanCanvas = await preprocessImage(file2, 'clean');
                     await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
                     const res2 = await worker.recognize(cleanCanvas);
-                    parseImage2GlobalText(res2.data.text);
+                    let found = parseImage2GlobalText(res2.data.text, {});
 
-                    status.innerText = '解析姓名與付款方式...';
-                    let nameOk = findBuyerNameSmart(res2.data);
-                    let payOk = !!extractPaymentMethod(res2.data.text);
+                    status.innerText = '解析姓名與金額...';
+                    let nameFound = findBuyerNameSmart(res2.data);
+                    let nameConflict = '';
 
-                    // 第 2 輪備援：一般灰階 + 自動分段 (PSM 4)，只補沒抓到的欄位
-                    if (!nameOk || !payOk) {
-                        status.innerText = '辨識圖二 (第 2 輪補強)...';
-                        const grayCanvas = await preprocessImage(file2, 'gray');
-                        await worker.setParameters({ tessedit_pageseg_mode: '4', preserve_interword_spaces: '1' });
-                        const res2b = await worker.recognize(grayCanvas);
-                        if (!nameOk) nameOk = findBuyerNameSmart(res2b.data);
-                        if (!payOk) {
-                            const pay = extractPaymentMethod(res2b.data.text);
-                            if (pay) {
-                                document.getElementById('myship-pay-method').value = pay;
-                                payOk = true;
+                    // 姓名專用：把標籤左邊那一格裁出來單獨辨識（* 很小，整張辨識最容易漏）
+                    const nameCanvas = cropLeftOfBadge(cleanCanvas);
+                    if (nameCanvas) {
+                        status.innerText = '辨識姓名...';
+                        await worker.setParameters({ tessedit_pageseg_mode: '7', preserve_interword_spaces: '1' });
+                        const rn = await worker.recognize(nameCanvas);
+                        const p = parseNameFromSegment(normalizeOcrText(rn.data.text).replace(/\s*\n\s*/g, ' '));
+                        if (p) {
+                            const pass1Name = document.getElementById('cust-name').value;
+                            if (!nameFound || (lastNameGuess && p.sure)) {
+                                // 第 1 輪沒抓到或只是推測 → 用裁切結果
+                                applyBuyerName(p);
+                                nameFound = true;
+                            } else if (p.sure && pass1Name && p.name !== pass1Name) {
+                                // 兩次都有結果但不一樣：保留第 1 輪（直接讀「姓名」那一列），提醒確認
+                                nameConflict = pass1Name + ' / ' + p.name;
                             }
                         }
                     }
 
-                    const missing = [];
-                    if (!nameOk) missing.push('收件人姓名');
-                    if (!payOk) missing.push('付款方式');
-                    if (missing.length > 0) {
-                        finalMsg = '辨識完成，但「' + missing.join('、') + '」未抓到，請手動填寫';
+                    const incomplete = () => !(nameFound && !lastNameGuess) || !found.phone || found.total == null || found.ship == null || !found.store;
+
+                    // 備援：一般灰階 + 稀疏文字模式 (PSM 11)，只補沒抓到的欄位
+                    if (incomplete()) {
+                        status.innerText = '辨識圖二 (補強)...';
+                        const grayCanvas = await preprocessImage(file2, 'gray');
+                        await worker.setParameters({ tessedit_pageseg_mode: '11', preserve_interword_spaces: '1' });
+                        const res2b = await worker.recognize(grayCanvas);
+                        found = parseImage2GlobalText(res2b.data.text, found);
+                        if (!(nameFound && !lastNameGuess)) {
+                            const ok2 = findBuyerNameSmart(res2b.data);
+                            nameFound = nameFound || ok2;
+                        }
                     }
+
+                    // 付款方式：這張截圖的「付款方式」若是收合的就沒有值，不列入必填
+                    const missing = [];
+                    if (!nameFound) missing.push('收件人姓名');
+                    if (!found.phone) missing.push('手機');
+                    if (found.total == null) missing.push('應付總金額');
+                    if (found.ship == null) missing.push('運費');
+                    if (!found.store) missing.push('門市');
+
+                    const parts = [];
+                    if (lastNameGuess) parts.push('姓名「' + lastNameGuess + '」為推測，請確認');
+                    if (nameConflict) parts.push('姓名兩次辨識不同（' + nameConflict + '），請確認');
+                    if (missing.length > 0) parts.push('「' + missing.join('、') + '」未抓到，請手動填寫');
+                    if (found.mismatch) parts.push('小計＋運費≠總額（若有折扣可忽略），請核對金額');
+                    if (parts.length > 0) finalMsg = '辨識完成，' + parts.join('；');
                 }
 
                 status.innerText = finalMsg;
@@ -431,72 +563,146 @@
             return classifyPayment(text);
         }
 
-        function parseImage2GlobalText(text) {
-            text = normalizeOcrText(text);
-
-            // 付款方式
-            const pay = extractPaymentMethod(text);
-            if (pay) {
-                document.getElementById('myship-pay-method').value = pay;
+        // 一行文字裡的金額：優先抓 $ 後面的數字，沒有 $ 就抓行尾數字；回傳整行所有金額
+        function amountsInLine(line) {
+            const out = [];
+            const re = /[\$＄]\s*(\d{1,3}(?:,\d{3})+|\d{1,7})/g;
+            let m;
+            while ((m = re.exec(line)) !== null) out.push(parseInt(m[1].replace(/,/g, ''), 10));
+            if (out.length === 0) {
+                const t = line.match(/(\d{1,3}(?:,\d{3})+|\d{1,7})\s*$/);
+                if (t) out.push(parseInt(t[1].replace(/,/g, ''), 10));
             }
+            return out;
+        }
 
-            // 訂單金額 (買家商品總額)
-            let grandTotal = '';
-            const amountMatch = text.match(/(?:訂\s*單\s*金\s*[額頻]|金\s*[額頻]|總\s*[額頻])[^\$0-9\n\r]*\$?\s*([0-9,]{2,8})/i);
-            if (amountMatch) {
-                grandTotal = amountMatch[1].replace(/,/g, '');
-            } else {
-                const dollarMatch = text.match(/\$\s*([0-9,]{3,7})/);
-                if (dollarMatch) {
-                    grandTotal = dollarMatch[1].replace(/,/g, '');
+        function findAmountByLabel(lines, labelRe) {
+            for (let i = 0; i < lines.length; i++) {
+                if (labelRe.test(lines[i])) {
+                    let a = amountsInLine(lines[i]);
+                    if (!a.length && lines[i + 1]) a = amountsInLine(lines[i + 1]);
+                    if (a.length) return a[a.length - 1];
                 }
             }
-            if (grandTotal) {
-                document.getElementById('myship-grand-total').value = grandTotal;
-            }
+            return null;
+        }
 
-            // 門市地址
-            let store = '';
-            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                if (/收\s*件\s*地\s*[址止]|收\s*件\s*門\s*市|地\s*[址止]/i.test(line)) {
-                    let clean = line.replace(/收\s*件\s*地\s*[址止]|收\s*件\s*門\s*市|地\s*[址止]|[:：]/g, '').trim();
-                    if (clean && clean.length >= 2) {
-                        store = clean;
-                        break;
-                    } else if (i + 1 < lines.length) {
-                        let nextLine = lines[i + 1].trim();
-                        if (nextLine && !nextLine.includes('門市') && nextLine.length <= 8) {
-                            nextLine += '門市';
-                        }
-                        store = nextLine;
-                        break;
+        // 小計 / 運費 / 總計（應付總金額）
+        function extractAmounts(lines, text) {
+            let total = findAmountByLabel(lines, /應\s*付|總\s*計/);
+            if (total == null) total = findAmountByLabel(lines, /訂\s*單\s*金\s*[額頻]/);
+            if (total == null) {
+                const m = text.match(/(?:金\s*[額頻]|總\s*[額頻])[^\$0-9\n\r]*\$?\s*([0-9,]{2,8})/i);
+                if (m) total = parseInt(m[1].replace(/,/g, ''), 10);
+            }
+            const ship = findAmountByLabel(lines, /[運运]\s*費/);
+            const sub = findAmountByLabel(lines, /小\s*計/);
+            return { total, ship, sub };
+        }
+
+        // 手機：優先「收件人資料」區塊裡的手機（橘字），遮罩字元（* x · 等）一律統一成 ***
+        function extractPhone(lines, text) {
+            const maskedRe = /([0O]9\d{2})\s*[^\d\s]{1,4}\s*(\d{3})(?!\d)/;
+            const plainRe = /[0O]9\d{8}(?!\d)/;
+            const fmt = (m) => m[1].replace(/O/g, '0') + '***' + m[2];
+            const recIdx = lines.findIndex(l => /收\s*件\s*人/.test(l));
+            const scopes = [];
+            if (recIdx >= 0) scopes.push(lines.slice(recIdx).join('\n'));
+            scopes.push(text);
+            for (const sc of scopes) {
+                for (const l of sc.split('\n')) {
+                    if (/手\s*機/.test(l) && !/訂\s*購\s*人/.test(l)) {
+                        let m = l.match(maskedRe);
+                        if (m) return fmt(m);
+                        m = l.match(plainRe);
+                        if (m) return m[0].replace(/O/g, '0');
                     }
                 }
+                let m = sc.match(maskedRe);
+                if (m) return fmt(m);
+                m = sc.match(plainRe);
+                if (m) return m[0].replace(/O/g, '0');
             }
-            if (!store || store.length < 2) {
-                const directStoreMatch = text.match(/([\u4e00-\u9fa5A-Za-z0-9]{2,8}門市)/);
-                if (directStoreMatch) {
-                    store = directStoreMatch[1].trim();
-                } else if (/東\s*興/i.test(text)) {
-                    store = '東興一門市';
+            return '';
+        }
+
+        // prev：上一輪已經抓到的欄位（第 2 輪只補沒抓到的）；回傳合併後的結果
+        function parseImage2GlobalText(text, prev) {
+            text = normalizeOcrText(text);
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            const f = Object.assign({ pay: '', total: null, ship: null, sub: null, phone: '', store: '', mismatch: false }, prev || {});
+
+            // 付款方式（該區塊若收合就沒有值，會略過）
+            if (!f.pay) {
+                const pay = extractPaymentMethod(text);
+                if (pay) {
+                    f.pay = pay;
+                    document.getElementById('myship-pay-method').value = pay;
                 }
             }
-            if (store) {
-                store = store.replace(/[^\u4e00-\u9fa5A-Za-z0-9]/g, '');
-                if (store.includes('東興') && !store.includes('門市')) {
-                    store += '門市';
+
+            // 小計 / 運費 / 應付總金額
+            const amt = extractAmounts(lines, text);
+            if (f.total == null && amt.total != null) f.total = amt.total;
+            if (f.ship == null && amt.ship != null) f.ship = amt.ship;
+            if (f.sub == null && amt.sub != null) f.sub = amt.sub;
+            // 三個數字互相推算補洞
+            if (f.total != null && f.sub != null && f.ship == null) {
+                const diff = f.total - f.sub;
+                if (diff >= 0 && diff <= 300) f.ship = diff;
+            }
+            if (f.total == null && f.sub != null && f.ship != null) f.total = f.sub + f.ship;
+            f.mismatch = (f.total != null && f.sub != null && f.ship != null && f.sub + f.ship !== f.total);
+
+            if (f.total != null) {
+                document.getElementById('myship-grand-total').value = String(f.total);
+            }
+            ocrFields = { total: f.total, ship: f.ship, sub: f.sub };
+
+            // 門市地址
+            if (!f.store) {
+                let store = '';
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (/收\s*件\s*地\s*[址止]|收\s*件\s*門\s*市|地\s*[址止]/i.test(line)) {
+                        let clean = line.replace(/收\s*件\s*地\s*[址止]|收\s*件\s*門\s*市|地\s*[址止]|[:：]/g, '').trim();
+                        if (clean && clean.length >= 2) {
+                            store = clean;
+                            break;
+                        } else if (i + 1 < lines.length) {
+                            let nextLine = lines[i + 1].trim();
+                            if (nextLine && !nextLine.includes('門市') && nextLine.length <= 8) {
+                                nextLine += '門市';
+                            }
+                            store = nextLine;
+                            break;
+                        }
+                    }
                 }
-                document.getElementById('myship-store').value = store;
+                if (!store || store.length < 2) {
+                    const directStoreMatch = text.match(/([一-龥A-Za-z0-9]{2,8}門市)/);
+                    if (directStoreMatch) {
+                        store = directStoreMatch[1].trim();
+                    }
+                }
+                if (store) {
+                    store = store.replace(/[^一-龥A-Za-z0-9]/g, '');
+                    f.store = store;
+                    document.getElementById('myship-store').value = store;
+                }
             }
 
             // 手機
-            const phoneMatch = text.match(/(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
-            if (phoneMatch) {
-                const currentName = document.getElementById('cust-name').value || '';
-                document.getElementById('myship-receiver').value = `${currentName} ${phoneMatch[1].trim()}`.trim();
+            if (!f.phone) {
+                const phone = extractPhone(lines, text);
+                if (phone) {
+                    f.phone = phone;
+                    const currentName = document.getElementById('cust-name').value || '';
+                    document.getElementById('myship-receiver').value = `${currentName} ${phone}`.trim();
+                }
             }
+
+            return f;
         }
 
         // ───────────── 收件人姓名辨識 ─────────────
@@ -507,7 +713,7 @@
         //  3. 先切掉橘色「封鎖此使用者」標籤文字，再用「中文 + 遮罩字元 + 中文」比對
         //  4. 若 * 被 OCR 漏掉（只剩兩個相鄰中文字），補回中間的 *，並在狀態列提醒確認
         const NAME_MASK_CLASS = '[*＊※·•‧。°゜.,，、xX×+＋\\-－–—_~～]';
-        const NAME_MASKED_RE = new RegExp('([\\u4e00-\\u9fa5]{1,3})\\s*(?:' + NAME_MASK_CLASS + '\\s*)+([\\u4e00-\\u9fa5]{1,3})');
+        const NAME_MASKED_RE = new RegExp('([\\u4e00-\\u9fa5]{1,3})\\s*(?:' + NAME_MASK_CLASS + '\\s*)+([\\u4e00-\\u9fa5]{1,2})');
 
         function parseNameFromSegment(seg) {
             if (!seg) return null;
@@ -522,6 +728,12 @@
                 const full = m[1] + m[2];
                 if (/[門市封鎖]/.test(full)) return null;
                 return { name: m[1] + '*' + m[2], sure: true };
+            }
+
+            // 只有姓氏 + 遮罩（例如 方*）
+            const tail = seg.match(new RegExp('^([\\u4e00-\\u9fa5]{1,3})\\s*(?:' + NAME_MASK_CLASS + '\\s*)+$'));
+            if (tail && !/[門市封鎖]/.test(tail[1])) {
+                return { name: tail[1] + '*', sure: true };
             }
 
             // 遮罩字元整個被 OCR 漏掉：只剩 2~4 個中文字 → 補回 *
@@ -577,9 +789,18 @@
 
             // 先挑「有遮罩字元、確定度高」的，其次才用補 * 的推測結果
             const valid = picks.filter(Boolean);
-            const best = valid.find(p => p.sure) || valid[0];
+            let best = valid.find(p => p.sure) || valid[0];
             if (!best) return false;
 
+            // 姓名後面緊貼著標籤殘字（例如「方*傑和」）：若別處有更短、且是它開頭的同名結果，就用短的
+            const shorter = valid.find(p => p.sure && p.name !== best.name && best.name.startsWith(p.name) && best.name.length - p.name.length <= 2);
+            if (shorter) best = shorter;
+
+            applyBuyerName(best);
+            return true;
+        }
+
+        function applyBuyerName(best) {
             document.getElementById('cust-name').value = best.name;
 
             // 同步至收件人欄位（保留已辨識到的手機）
@@ -588,10 +809,7 @@
             const phone = phoneMatch ? phoneMatch[1] : '';
             document.getElementById('myship-receiver').value = `${best.name} ${phone}`.trim();
 
-            if (!best.sure) {
-                document.getElementById('ocr-status').innerText = '姓名「' + best.name + '」為推測，請確認';
-            }
-            return true;
+            lastNameGuess = best.sure ? '' : best.name;
         }
 
         function clearInput() {
@@ -615,6 +833,8 @@
             document.getElementById('result-wrapper').classList.add('hidden');
             file1 = null;
             file2 = null;
+            ocrFields = { total: null, ship: null, sub: null };
+            lastNameGuess = '';
         }
 
         function parseAndGenerate() {
@@ -680,6 +900,12 @@
                 }
             }
 
+            // 圖二辨識到的金額（只在「總額沒被手動改過」時採用）
+            const ocrMatchesTotal = ocrFields.total != null && String(ocrFields.total) === grandTotalInput;
+            if (calculatedSubtotal === 0 && ocrMatchesTotal && ocrFields.sub != null) {
+                calculatedSubtotal = ocrFields.sub;
+            }
+
             // 若使用者未在備註欄手動輸入，自動填入擷取到的客製項目
             if (!notes && autoNotes.length > 0) {
                 notes = autoNotes.join('\n');
@@ -694,6 +920,8 @@
                 finalGrandTotal = parseInt(grandTotalInput);
                 calculatedShipping = finalGrandTotal + discountInput - calculatedSubtotal;
                 if (calculatedShipping < 0) calculatedShipping = 0;
+                // 截圖上有印運費就直接用截圖的
+                if (ocrMatchesTotal && ocrFields.ship != null) calculatedShipping = ocrFields.ship;
             } else {
                 calculatedShipping = (calculatedSubtotal - discountInput >= 2000) ? 0 : 38;
                 finalGrandTotal = Math.max(0, calculatedSubtotal - discountInput + calculatedShipping);
