@@ -244,6 +244,56 @@
             }
         }
 
+        // ───────────── 圖二辨識強化：影像前處理 ─────────────
+        // mode 'clean'：放大 + 取 RGB 最小值當灰階（紅字「尚未付款」會變深、橘色封鎖標籤與橘字手機會被洗白）+ 拉高對比
+        // mode 'gray' ：只放大 + 一般灰階（第二輪備援用）
+        function loadImageElement(file) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+                img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+                img.src = url;
+            });
+        }
+
+        async function preprocessImage(file, mode) {
+            const img = await loadImageElement(file);
+            const scale = Math.min(3, Math.max(1, 1800 / img.naturalWidth));
+            const w = Math.round(img.naturalWidth * scale);
+            const h = Math.round(img.naturalHeight * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const d = imgData.data;
+            for (let i = 0; i < d.length; i += 4) {
+                const r = d[i], g = d[i + 1], b = d[i + 2];
+                let v;
+                if (mode === 'clean') {
+                    if (r > 200 && g > 90 && g < 150 && b < 100 && (r - b) > 110) {
+                        v = 255; // 橘色區塊（封鎖此使用者標籤、橘字手機）
+                    } else {
+                        v = Math.min(r, g, b);
+                        v = (v - 50) * 255 / (190 - 50);
+                        v = v < 0 ? 0 : (v > 255 ? 255 : v);
+                    }
+                } else {
+                    v = 0.299 * r + 0.587 * g + 0.114 * b;
+                }
+                d[i] = d[i + 1] = d[i + 2] = v;
+            }
+            ctx.putImageData(imgData, 0, 0);
+            return canvas;
+        }
+
         async function runOCR() {
             if (!file1 && !file2) {
                 alert('請先選擇截圖！');
@@ -255,6 +305,9 @@
             btn.disabled = true;
             btn.classList.add('opacity-50');
 
+            let worker = null;
+            let finalMsg = '辨識完成！已自動帶入';
+
             try {
                 // 圖一辨識：訂單資訊
                 if (file1) {
@@ -263,23 +316,55 @@
                     parseImage1Text(res1.data.text);
                 }
 
-                // 圖二辨識：付款與收件人
+                // 圖二辨識：付款與收件人（前處理 + 逐行辨識 + 兩輪備援）
                 if (file2) {
-                    status.innerText = '辨識圖二 (整體欄位)...';
-                    const res2 = await Tesseract.recognize(file2, 'chi_tra+eng');
+                    status.innerText = '圖二前處理中...';
+                    worker = await Tesseract.createWorker('chi_tra+eng');
+
+                    // 第 1 輪：去色塊 + 高對比，整塊逐行辨識 (PSM 6)
+                    status.innerText = '辨識圖二 (第 1 輪)...';
+                    const cleanCanvas = await preprocessImage(file2, 'clean');
+                    await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+                    const res2 = await worker.recognize(cleanCanvas);
                     parseImage2GlobalText(res2.data.text);
 
-                    // 智慧姓名擷取（結合旁邊定位 + 全域結構模糊比對）
-                    status.innerText = '解析姓名中...';
-                    findBuyerNameSmart(res2.data);
+                    status.innerText = '解析姓名與付款方式...';
+                    let nameOk = findBuyerNameSmart(res2.data);
+                    let payOk = !!extractPaymentMethod(res2.data.text);
+
+                    // 第 2 輪備援：一般灰階 + 自動分段 (PSM 4)，只補沒抓到的欄位
+                    if (!nameOk || !payOk) {
+                        status.innerText = '辨識圖二 (第 2 輪補強)...';
+                        const grayCanvas = await preprocessImage(file2, 'gray');
+                        await worker.setParameters({ tessedit_pageseg_mode: '4', preserve_interword_spaces: '1' });
+                        const res2b = await worker.recognize(grayCanvas);
+                        if (!nameOk) nameOk = findBuyerNameSmart(res2b.data);
+                        if (!payOk) {
+                            const pay = extractPaymentMethod(res2b.data.text);
+                            if (pay) {
+                                document.getElementById('myship-pay-method').value = pay;
+                                payOk = true;
+                            }
+                        }
+                    }
+
+                    const missing = [];
+                    if (!nameOk) missing.push('收件人姓名');
+                    if (!payOk) missing.push('付款方式');
+                    if (missing.length > 0) {
+                        finalMsg = '辨識完成，但「' + missing.join('、') + '」未抓到，請手動填寫';
+                    }
                 }
 
-                status.innerText = '辨識完成！已自動帶入';
+                status.innerText = finalMsg;
             } catch (err) {
                 console.error(err);
                 status.innerText = '辨識失敗，請手動確認';
                 alert('圖片辨識過程出現異常，請手動微調欄位。');
             } finally {
+                if (worker) {
+                    try { await worker.terminate(); } catch (e) {}
+                }
                 btn.disabled = false;
                 btn.classList.remove('opacity-50');
             }
@@ -297,14 +382,62 @@
             }
         }
 
+        // 把 OCR 常見的「中文字之間被插入空白」「全形括號」清乾淨
+        function normalizeOcrText(text) {
+            let t = (text || '').replace(/[\u3000\t]+/g, ' ');
+            t = t.replace(/（/g, '(').replace(/）/g, ')');
+            // 中文與中文（或括號）之間的空白移除；lookahead 不吃字元，所以連續字也能處理
+            t = t.replace(/([\u4e00-\u9fa5)])[ ]+(?=[\u4e00-\u9fa5(])/g, '$1');
+            return t;
+        }
+
+        // 付款方式：先找「付款方式」那一列的值，再用關鍵字分類；容忍 貨/货、款/歀 等常見誤認
+        function classifyPayment(s) {
+            if (!s) return '';
+            if (/取\s*[貨货]\s*付\s*[款歀]|[貨货]\s*到\s*付\s*[款歀]|取\s*[貨货]|尚\s*未\s*付/.test(s)) {
+                const hasUnpaid = /尚\s*未|未\s*付/.test(s);
+                const hasPaid = /已\s*付/.test(s);
+                if (hasPaid && !hasUnpaid) return '取貨付款 (已付款)';
+                return '取貨付款 (尚未付款)';
+            }
+            if (/信\s*用\s*卡/.test(s)) return '信用卡';
+            if (/ATM|轉\s*帳|虛\s*擬\s*帳/i.test(s)) return 'ATM 轉帳';
+            if (/超\s*商\s*代\s*碼|代\s*碼\s*繳/.test(s)) return '超商代碼繳費';
+            if (/LINE\s*Pay/i.test(s)) return 'LINE Pay';
+            return '';
+        }
+
+        function extractPaymentMethod(rawText) {
+            const text = normalizeOcrText(rawText);
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            const labelRe = /付\s*[款歀]\s*方\s*[式戎]/;
+
+            // 1) 優先：「付款方式」標籤同一列右側，或標籤單獨一列時取下一列
+            const candidates = [];
+            for (let i = 0; i < lines.length; i++) {
+                if (labelRe.test(lines[i])) {
+                    const rest = lines[i].replace(/^.*付\s*[款歀]\s*方\s*[式戎]/, '').replace(/^[\s:：|]+/, '').trim();
+                    if (rest) {
+                        candidates.push(rest);
+                    } else if (lines[i + 1]) {
+                        candidates.push(lines[i + 1].replace(/^.*付\s*[款歀]\s*方\s*[式戎]/, '').trim());
+                    }
+                }
+            }
+            const fromLabel = classifyPayment(candidates.join(' '));
+            if (fromLabel) return fromLabel;
+
+            // 2) 備援：整份文字找關鍵字
+            return classifyPayment(text);
+        }
+
         function parseImage2GlobalText(text) {
+            text = normalizeOcrText(text);
+
             // 付款方式
-            if (/取\s*貨\s*付\s*款|尚\s*未\s*付\s*款/i.test(text)) {
-                document.getElementById('myship-pay-method').value = '取貨付款 (尚未付款)';
-            } else if (/信\s*用\s*卡/i.test(text)) {
-                document.getElementById('myship-pay-method').value = '信用卡';
-            } else if (/ATM|轉\s*帳/i.test(text)) {
-                document.getElementById('myship-pay-method').value = 'ATM 轉帳';
+            const pay = extractPaymentMethod(text);
+            if (pay) {
+                document.getElementById('myship-pay-method').value = pay;
             }
 
             // 訂單金額 (買家商品總額)
@@ -366,110 +499,99 @@
             }
         }
 
-        // 核心邏輯：多道過濾機制 + 全域模糊比對常見遮罩字元（*、＊、※、·、•、x、X、空白）
+        // ───────────── 收件人姓名辨識 ─────────────
+        // 賣貨便姓名會被遮成「蔡*芯」，OCR 常把 * 讀成 ·、x、。、°… 甚至整個漏掉。
+        // 做法：
+        //  1. 優先讀「收件人資料」區塊裡的「姓名」那一列（就是要印在確認單上的收件人）
+        //  2. 找不到再退到「訂購人姓名」那一列，再退到任何「姓名」列，最後才全文比對
+        //  3. 先切掉橘色「封鎖此使用者」標籤文字，再用「中文 + 遮罩字元 + 中文」比對
+        //  4. 若 * 被 OCR 漏掉（只剩兩個相鄰中文字），補回中間的 *，並在狀態列提醒確認
+        const NAME_MASK_CLASS = '[*＊※·•‧。°゜.,，、xX×+＋\\-－–—_~～]';
+        const NAME_MASKED_RE = new RegExp('([\\u4e00-\\u9fa5]{1,3})\\s*(?:' + NAME_MASK_CLASS + '\\s*)+([\\u4e00-\\u9fa5]{1,3})');
+
+        function parseNameFromSegment(seg) {
+            if (!seg) return null;
+            // 切掉「封鎖此使用者」標籤，避免被當成姓名的一部分
+            const cut = seg.search(/封\s*[鎖锁]/);
+            if (cut >= 0) seg = seg.slice(0, cut);
+            seg = seg.replace(/^[\s:：|]+/, '').trim();
+            if (!seg) return null;
+
+            const m = seg.match(NAME_MASKED_RE);
+            if (m) {
+                const full = m[1] + m[2];
+                if (/[門市封鎖]/.test(full)) return null;
+                return { name: m[1] + '*' + m[2], sure: true };
+            }
+
+            // 遮罩字元整個被 OCR 漏掉：只剩 2~4 個中文字 → 補回 *
+            const loose = seg.match(/^[^\u4e00-\u9fa5]*([\u4e00-\u9fa5]{2,4})(?![\u4e00-\u9fa5])/);
+            if (loose && !/[門市封鎖付款式金額]/.test(loose[1])) {
+                const s = loose[1];
+                return { name: s.charAt(0) + '*' + s.charAt(s.length - 1), sure: false };
+            }
+            return null;
+        }
+
         function findBuyerNameSmart(ocrData) {
-            let extractedName = '';
+            const text = normalizeOcrText((ocrData && ocrData.text) || '');
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            const afterLabel = (line, labelRe) => line.replace(new RegExp('^.*?' + labelRe.source), '');
 
-            // 輔助函式：將各種常見 OCR 遮罩混淆字元正規化為半形星號 *
-            function normalizeMask(str) {
-                if (!str) return '';
-                // 將全形乘號、特殊字元、點、x 等遮罩轉為 *，並移除多餘符號
-                let s = str.replace(/[＊※·•\s·xX\-\+]/g, '*');
-                // 將多個相鄰星號化簡為單一星號（如 蔡**芯 -> 蔡*芯）
-                s = s.replace(/\*+/g, '*');
-                return s;
-            }
+            const picks = []; // 依優先順序收集候選
 
-            // 第 1 道：從「行 (lines)」裡找包含「訂購人姓名」右邊的文字
-            if (ocrData.lines && ocrData.lines.length > 0) {
-                for (let line of ocrData.lines) {
-                    const lineText = line.text.trim();
-                    if (lineText.includes('訂購人姓名') || lineText.includes('訂購人')) {
-                        let rightSide = lineText.replace(/.*訂購人(?:姓名)?/g, '').replace(/[:：]/g, '').trim();
-                        rightSide = normalizeMask(rightSide);
-                        // 擷取中文 + 遮罩 + 中文
-                        let m = rightSide.match(/([\u4e00-\u9fa5]{1,2}\*+[\u4e00-\u9fa5]{1,2})/);
-                        if (m && !m[1].includes('門') && !m[1].includes('市') && !m[1].includes('封')) {
-                            extractedName = m[1];
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // 第 2 道：從「單詞座標 (words)」裡找「訂購人姓名」右側同水平高度的單詞
-            if (!extractedName && ocrData.words && ocrData.words.length > 0) {
-                let targetWord = null;
-                for (let w of ocrData.words) {
-                    const clean = w.text.replace(/\s+/g, '');
-                    if (clean.includes('訂購人姓名') || clean === '訂購人') {
-                        targetWord = w;
+            // 1) 收件人資料區塊裡的「姓名」
+            const recIdx = lines.findIndex(l => /收\s*件\s*人/.test(l));
+            if (recIdx >= 0) {
+                for (let j = recIdx; j < Math.min(lines.length, recIdx + 5); j++) {
+                    if (/姓\s*名/.test(lines[j]) && !/訂\s*購\s*人/.test(lines[j])) {
+                        picks.push(parseNameFromSegment(afterLabel(lines[j], /姓\s*名/)));
                         break;
                     }
                 }
+            }
 
-                if (targetWord) {
-                    const targetBbox = targetWord.bbox;
-                    const targetMidY = (targetBbox.y0 + targetBbox.y1) / 2;
-
-                    let candidates = [];
-                    for (let w of ocrData.words) {
-                        // 在右側且高度相近
-                        if (w.bbox.x0 >= targetBbox.x1 - 5) {
-                            const wordMidY = (w.bbox.y0 + w.bbox.y1) / 2;
-                            if (Math.abs(wordMidY - targetMidY) <= 20) {
-                                candidates.push({
-                                    dist: w.bbox.x0 - targetBbox.x1,
-                                    text: w.text.trim()
-                                });
-                            }
-                        }
-                    }
-
-                    if (candidates.length > 0) {
-                        candidates.sort((a, b) => a.dist - b.dist);
-                        let candidateText = normalizeMask(candidates[0].text);
-                        let m = candidateText.match(/([\u4e00-\u9fa5]{1,2}\*+[\u4e00-\u9fa5]{1,2})/);
-                        if (m && !m[1].includes('門') && !m[1].includes('市')) {
-                            extractedName = m[1];
-                        }
-                    }
+            // 2) 訂購人姓名
+            for (const line of lines) {
+                if (/訂\s*購\s*人(?:\s*姓\s*名)?/.test(line) && /姓\s*名/.test(line)) {
+                    picks.push(parseNameFromSegment(afterLabel(line, /訂\s*購\s*人\s*姓\s*名/)));
+                    break;
                 }
             }
 
-            // 第 3 道：全域結構模糊比對（雙重保險，完全避開版面切碎偏差）
-            // 賣貨便截圖中，只有姓名會呈現「中文 + 遮罩(*、※、·、空白) + 中文」的型態（例如 蔡*芯）
-            if (!extractedName) {
-                const fullNormalized = normalizeMask(ocrData.text || '');
-                // 優先比對「姓名」標籤附近的結構
-                const nearMatch = fullNormalized.match(/姓\s*名[:：*]*\s*([\u4e00-\u9fa5]\*+[\u4e00-\u9fa5])/);
-                if (nearMatch && !nearMatch[1].includes('封')) {
-                    extractedName = nearMatch[1];
-                } else {
-                    // 全文搜尋獨立的「中文 + 星號 + 中文」
-                    const allMatches = fullNormalized.match(/([\u4e00-\u9fa5]\*+[\u4e00-\u9fa5])/g);
-                    if (allMatches) {
-                        for (let matchStr of allMatches) {
-                            if (!matchStr.includes('門') && !matchStr.includes('市') && !matchStr.includes('封') && !matchStr.includes('鎖')) {
-                                extractedName = matchStr;
-                                break;
-                            }
-                        }
-                    }
+            // 3) 任何含「姓名」的列
+            for (const line of lines) {
+                if (/姓\s*名/.test(line)) {
+                    picks.push(parseNameFromSegment(afterLabel(line, /姓\s*名/)));
                 }
             }
 
-            // 成功取得後格式化並填入
-            if (extractedName) {
-                extractedName = extractedName.replace(/\*+/g, '*'); // 保證星號乾淨
-                document.getElementById('cust-name').value = extractedName;
-
-                // 同步至收件人欄位
-                const currentReceiver = document.getElementById('myship-receiver').value;
-                const phoneMatch = currentReceiver.match(/(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
-                const phone = phoneMatch ? phoneMatch[1] : '';
-                document.getElementById('myship-receiver').value = `${extractedName} ${phone}`.trim();
+            // 4) 全文比對「中文 + 遮罩 + 中文」
+            const all = text.match(new RegExp('[\\u4e00-\\u9fa5]{1,3}\\s*(?:\\*|＊|※|·|•|‧)+\\s*[\\u4e00-\\u9fa5]{1,3}', 'g'));
+            if (all) {
+                for (const s of all) {
+                    const p = parseNameFromSegment(s);
+                    if (p && p.sure) { picks.push(p); break; }
+                }
             }
+
+            // 先挑「有遮罩字元、確定度高」的，其次才用補 * 的推測結果
+            const valid = picks.filter(Boolean);
+            const best = valid.find(p => p.sure) || valid[0];
+            if (!best) return false;
+
+            document.getElementById('cust-name').value = best.name;
+
+            // 同步至收件人欄位（保留已辨識到的手機）
+            const currentReceiver = document.getElementById('myship-receiver').value;
+            const phoneMatch = currentReceiver.match(/(09[\d\*]{8}|09\d{2}[\-\*]{3,4}\d{3})/);
+            const phone = phoneMatch ? phoneMatch[1] : '';
+            document.getElementById('myship-receiver').value = `${best.name} ${phone}`.trim();
+
+            if (!best.sure) {
+                document.getElementById('ocr-status').innerText = '姓名「' + best.name + '」為推測，請確認';
+            }
+            return true;
         }
 
         function clearInput() {
